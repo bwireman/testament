@@ -47,8 +47,8 @@ jobs:
           otp-version: ${{ env.otp }}
           gleam-version: ${{ env.gleam }}
           rebar3-version: ${{ env.rebar }}
-      - run: cd example
       - run: gleam.exe test --target erlang
+        working-directory: "example"
 
   windows-node:
     runs-on: windows-latest
@@ -63,9 +63,8 @@ jobs:
         with:
           node-version: ${{ env.nodelts }}
           cache: "npm"
-      - run: cd example
-      - run: gleam.exe test --target javascript nodejs
-
+      - run: gleam.exe test --target javascript
+        working-directory: "example"
 
   node:
     runs-on: ubuntu-latest
