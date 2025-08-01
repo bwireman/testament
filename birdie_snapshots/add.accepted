@@ -1,0 +1,26 @@
+---
+version: 1.3.2
+title: add
+---
+src:
+///```
+///:> import gleam/io
+///:> assert add(1, 1) == 2
+///:> assert add(0, 0) == 0
+///```
+pub fn add(x: Int, y: Int) {
+  x + y
+}
+
+====================
+
+imports:
+import gleam/io
+
+====================
+
+code:
+{
+assert add(1, 1) == 2
+assert add(0, 0) == 0
+}

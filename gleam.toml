@@ -1,0 +1,30 @@
+name = "testament"
+version = "0.1.0"
+licences = ["MIT"]
+repository = { type = "github", user = "bwireman", repo = "testament" }
+description = "Doc tests for Gleam ✨!"
+gleam = ">= 1.11.0"
+
+[javascript.deno]
+allow_read = ["test", "src", "gleam.toml", "birdie_snapshots"]
+allow_write = ["birdie_snapshots"]
+
+[dependencies]
+gleam_stdlib = ">= 0.44.0 and < 2.0.0"
+glexer = ">= 2.2.1 and < 3.0.0"
+simplifile = ">= 2.3.0 and < 3.0.0"
+filepath = ">= 1.1.2 and < 2.0.0"
+argv = ">= 1.0.2 and < 2.0.0"
+shellout = ">= 1.7.0 and < 2.0.0"
+envoy = ">= 1.0.2 and < 2.0.0"
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"
+birdie = ">= 1.3.2 and < 2.0.0"
+go_over = ">= 3.2.0 and < 4.0.0"
+glam = ">= 2.0.3 and < 3.0.0"
+
+[go-over]
+outdated = true
+allowed_licenses = ["MIT", "Apache-2.0", "BSD 2-Clause", "WTFPL"]
+

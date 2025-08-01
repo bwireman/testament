@@ -1,0 +1,21 @@
+---
+version: 1.3.2
+title: requires prefix
+---
+src:
+///```
+///import gleam/io
+///assert add(1, 1) == 2
+///```
+pub fn add(x: Int, y: Int) {
+  x + y
+}
+
+====================
+
+imports:
+
+
+====================
+
+code:
