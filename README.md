@@ -13,15 +13,20 @@ gleam add --dev testament@1
 
 ### Write some beautiful gleam code with Doc Comments
 
-(Note that all doc test lines need to be Doc Comments and start with `:`)
+(Note that all doc test lines need to be Doc Comments or Module comments and
+start with `:`)
 
 ````gleam
+////Example Module
+////```gleam
+////: assert 1 + 1 == 2
+////```
+
 ///adds two Ints
 ///```gleam
-///: import example
 ///: assert example.add(1, 2) == 3
 ///: assert example.add(1, -1) == 0
-/// ```
+///```
 pub fn add(a: Int, b: Int) -> Int {
   a + b
 }
@@ -56,7 +61,7 @@ gleam test
 (these should get deleted after the run)
 
 ```bash
-echo -e "\n*_doc_test.gleam" >> .gitignore
+echo -e "\ntest/testament/*" >> .gitignore
 ```
 
 ### If running with Deno

@@ -20,9 +20,13 @@ Usage:
 
 Write some beautiful gleam code with Doc Comments
 ```gleam
+////Example Module
+////```gleam
+////: assert 1 + 1 == 2
+////```
+
 ///adds two Ints
-///```
-///: import example
+///```gleam
 ///: assert example.add(1, 2) == 3
 ///: assert example.add(1, -1) == 0
 /// ```

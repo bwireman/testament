@@ -4,4 +4,4 @@
 erl_crash.dump
 .vscode
 /example/build
-*_doc_test.gleam
+test/testament/*
