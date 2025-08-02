@@ -10,7 +10,7 @@ pub fn main() -> Nil {
 }
 
 fn snapshot_doc_test(title: String, src: String) {
-  let #(imports, code) = util.get_doc_tests_imports_and_code(src)
+  let #(imports, code) = util.get_doc_tests_imports_and_code(src, [])
 
   ["src:\n" <> src, "imports:\n" <> imports, "code:\n" <> code]
   |> list.map(doc.from_string)
@@ -24,6 +24,12 @@ pub fn get_test_file_name_test() {
     == "test/testament/x_doc_test.gleam"
   assert util.get_test_file_name("src/foo/bar/example.gleam")
     == "test/testament/foo/bar/example_doc_test.gleam"
+}
+
+pub fn import_from_file_name_test() {
+  assert util.import_from_file_name("src/x.gleam") == "import x"
+  assert util.import_from_file_name("src/foo/bar/example.gleam")
+    == "import foo/bar/example"
 }
 
 pub fn is_doc_test() {
@@ -52,8 +58,8 @@ pub fn split_imports_and_code_test() {
 }
 
 pub fn get_doc_tests_imports_and_code_test() {
-  assert util.get_doc_tests_imports_and_code("") == #("", "")
-  assert util.get_doc_tests_imports_and_code("   ") == #("", "")
+  assert util.get_doc_tests_imports_and_code("", []) == #("", "")
+  assert util.get_doc_tests_imports_and_code("   ", []) == #("", "")
   snapshot_doc_test(
     "add",
     "///```

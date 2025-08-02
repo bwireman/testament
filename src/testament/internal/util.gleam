@@ -21,7 +21,10 @@ pub fn get_test_file_name(file: String) -> String {
   |> filepath.join("test", _)
 }
 
-pub fn get_doc_tests_imports_and_code(code: String) -> #(String, String) {
+pub fn get_doc_tests_imports_and_code(
+  code: String,
+  other_imports: List(String),
+) -> #(String, String) {
   let cases =
     code
     |> glexer.new()
@@ -41,7 +44,7 @@ pub fn get_doc_tests_imports_and_code(code: String) -> #(String, String) {
   |> list.map(string.crop(_, prefix))
   |> list.map(string.drop_start(_, 1))
   |> list.map(string.trim)
-  |> list.fold(#([], []), split_imports_and_code)
+  |> list.fold(#(other_imports, []), split_imports_and_code)
   |> pair.map_first(list.unique)
   |> pair.map_first(string.join(_, "\n"))
   |> pair.map_second(string.join(_, "\n"))
@@ -101,10 +104,21 @@ pub fn clean_doc_tests() -> Result(Nil, simplifile.FileError) {
   |> simplifile.delete_all()
 }
 
-pub fn create_tests_for_file(file: String) {
+pub fn import_from_file_name(file: String) {
+  let assert Ok(module) =
+    file
+    |> filepath.strip_extension
+    |> filepath.split()
+    |> list.rest()
+
+  "import " <> list.fold(module, "", filepath.join)
+}
+
+pub fn create_tests_for_file(file: String, extra_imports: List(String)) {
   let assert Ok(file_content) = simplifile.read(file)
 
-  let #(imports, code) = get_doc_tests_imports_and_code(file_content)
+  let #(imports, code) =
+    get_doc_tests_imports_and_code(file_content, extra_imports)
 
   case string.is_empty(code) {
     True -> Ok(Nil)
