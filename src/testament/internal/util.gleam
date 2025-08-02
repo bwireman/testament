@@ -1,9 +1,11 @@
 import filepath
 import gleam/list
 import gleam/pair
+import gleam/result
 import gleam/string
 import glexer
 import glexer/token
+import simplifile
 
 const prefix = ":"
 
@@ -84,5 +86,37 @@ pub fn split_imports_and_code(
   case string.starts_with(line, "import") {
     True -> pair.map_first(code, list.append(_, [line]))
     False -> pair.map_second(code, list.append(_, [line]))
+  }
+}
+
+pub fn clean_doc_tests() -> Result(Nil, simplifile.FileError) {
+  use files <- result.try(simplifile.get_files("src"))
+  files
+  |> list.map(get_test_file_name)
+  |> simplifile.delete_all()
+}
+
+pub fn create_tests_for_file(file: String) {
+  let assert Ok(file_content) = simplifile.read(file)
+
+  let #(imports, code) = get_doc_tests_imports_and_code(file_content)
+
+  case string.is_empty(code) {
+    True -> Ok(Nil)
+    _ -> {
+      let test_file_name = get_test_file_name(file)
+
+      let _ =
+        test_file_name
+        |> filepath.directory_name()
+        |> simplifile.create_directory_all()
+
+      let test_content =
+        string.join([imports, "pub fn doc_test() {", code, "}"], "\n")
+
+      let _ = simplifile.delete(test_file_name)
+
+      let assert Ok(Nil) = simplifile.append(test_file_name, test_content)
+    }
   }
 }

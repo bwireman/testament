@@ -3,8 +3,6 @@ import envoy
 import filepath
 import gleam/io
 import gleam/list
-import gleam/result
-import gleam/string
 import platform
 import shellout
 import simplifile
@@ -58,33 +56,35 @@ gleam test
 pub fn main() -> Nil {
   case argv.load().arguments {
     ["clean"] -> {
-      let _ = clean_doc_tests()
+      let _ = util.clean_doc_tests()
 
       Nil
     }
 
     ["clean", "all"] -> {
-      let _ = clean_doc_tests()
+      let _ = util.clean_doc_tests()
       let _ = simplifile.delete(filepath.join("test", "testament"))
 
       Nil
     }
 
     ["create"] -> {
-      let _ = clean_doc_tests()
+      let _ = util.clean_doc_tests()
       let assert Ok(files) = simplifile.get_files("src")
-      let assert Ok(_) = list.try_each(files, create_tests_for_file)
+      let assert Ok(_) = list.try_each(files, util.create_tests_for_file)
 
       Nil
     }
 
-    ["h"] | ["help"] -> io.println(help)
+    ["-h"] | ["h"] | ["--help"] | ["help"] -> io.println(help)
 
     _ -> io.print_error("Unknown command")
   }
 }
 
 const docs_env_var = "TESTAMENT_WITH_DOCS"
+
+const js_args = ["javascript", "--runtime"]
 
 ///Add testament to your test's main function and you're good to go!
 ///You can use gleeunit or any other testing framework
@@ -99,16 +99,16 @@ const docs_env_var = "TESTAMENT_WITH_DOCS"
 pub fn test_main(run_tests: fn() -> Nil) -> Nil {
   let assert Ok(files) = simplifile.get_files("src")
 
-  let assert Ok(_) = list.try_each(files, create_tests_for_file)
+  let assert Ok(_) = list.try_each(files, util.create_tests_for_file)
   case envoy.get(docs_env_var) {
     Ok("1") -> run_tests()
 
     Error(_) | Ok(_) -> {
       let args = case platform.runtime() {
         platform.Erlang -> ["erlang"]
-        platform.Bun -> ["javascript", "--runtime", "bun"]
-        platform.Deno -> ["javascript", "--runtime", "deno"]
-        platform.Node -> ["javascript", "--runtime", "node"]
+        platform.Bun -> list.append(js_args, ["bun"])
+        platform.Deno -> list.append(js_args, ["deno"])
+        platform.Node -> list.append(js_args, ["node"])
         platform.Browser | platform.OtherRuntime(_) ->
           panic as "testament: invalid runtime or target"
       }
@@ -120,41 +120,9 @@ pub fn test_main(run_tests: fn() -> Nil) -> Nil {
           shellout.SetEnvironment([#(docs_env_var, "1")]),
         ])
 
-      let assert Ok(_) = clean_doc_tests()
+      let assert Ok(_) = util.clean_doc_tests()
 
       Nil
-    }
-  }
-}
-
-fn clean_doc_tests() -> Result(Nil, simplifile.FileError) {
-  use files <- result.try(simplifile.get_files("src"))
-  files
-  |> list.map(util.get_test_file_name)
-  |> simplifile.delete_all()
-}
-
-fn create_tests_for_file(file: String) {
-  let assert Ok(file_content) = simplifile.read(file)
-
-  let #(imports, code) = util.get_doc_tests_imports_and_code(file_content)
-
-  case string.is_empty(code) {
-    True -> Ok(Nil)
-    _ -> {
-      let test_file_name = util.get_test_file_name(file)
-
-      let _ =
-        test_file_name
-        |> filepath.directory_name()
-        |> simplifile.create_directory_all()
-
-      let test_content =
-        string.join([imports, "pub fn doc_test() {", code, "}"], "\n")
-
-      let _ = simplifile.delete(test_file_name)
-
-      let assert Ok(Nil) = simplifile.append(test_file_name, test_content)
     }
   }
 }
