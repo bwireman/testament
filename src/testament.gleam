@@ -5,6 +5,7 @@ import gleam/io
 import gleam/list
 import gleam/result
 import gleam/string
+import platform
 import shellout
 import simplifile
 import testament/internal/util
@@ -50,7 +51,7 @@ gleam test
    Compiled in 0.44s
     Running example_test.main
 .
-1 test, no failures
+1 tests, no failures
 ```
 "
 
@@ -108,8 +109,17 @@ pub fn test_main(run_tests: fn() -> Nil) -> Nil {
     Ok("1") -> run_tests()
 
     Error(_) | Ok(_) -> {
+      let args = case platform.runtime() {
+        platform.Erlang -> ["erlang"]
+        platform.Bun -> ["javascript", "--runtime", "bun"]
+        platform.Deno -> ["javascript", "--runtime", "deno"]
+        platform.Node -> ["javascript", "--runtime", "node"]
+        platform.Browser | platform.OtherRuntime(_) ->
+          panic as "testament: invalid runtime or target"
+      }
+
       let _ =
-        shellout.command("gleam", ["test"], ".", [
+        shellout.command("gleam", ["test", "--target", ..args], ".", [
           shellout.LetBeStderr,
           shellout.LetBeStdout,
           shellout.SetEnvironment([#(docs_env_var, "1")]),
