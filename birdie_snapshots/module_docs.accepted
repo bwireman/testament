@@ -1,0 +1,22 @@
+---
+version: 1.3.2
+title: module docs
+---
+src:
+////```
+////: import gleam/io
+////: assert 1 + 1 == 2
+////```
+
+
+====================
+
+imports:
+import gleam/io
+
+====================
+
+code:
+{
+assert 1 + 1 == 2
+}

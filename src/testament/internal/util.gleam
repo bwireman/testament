@@ -27,7 +27,7 @@ pub fn get_doc_tests_imports_and_code(code: String) -> #(String, String) {
     |> glexer.new()
     |> glexer.lex()
     |> list.map(pair.first)
-    |> list.filter(is_commentdoc)
+    |> list.filter(is_doc)
     |> list.fold(DocState(False, []), fold_doc_state)
 
   let lines = case cases.in {
@@ -38,7 +38,8 @@ pub fn get_doc_tests_imports_and_code(code: String) -> #(String, String) {
   lines
   |> list.filter(is_doctest_line)
   |> list.map(token.to_source)
-  |> list.map(string.drop_start(_, string.length(prefix) + 3))
+  |> list.map(string.crop(_, prefix))
+  |> list.map(string.drop_start(_, 1))
   |> list.map(string.trim)
   |> list.fold(#([], []), split_imports_and_code)
   |> pair.map_first(list.unique)
@@ -52,11 +53,13 @@ type DocState {
 
 fn fold_doc_state(state: DocState, line: token.Token) {
   case state, line {
-    DocState(False, lines), token.CommentDoc(":" <> _) ->
-      DocState(True, list.append(lines, [open, line]))
+    DocState(False, lines), token.CommentDoc(":" <> _)
+    | DocState(False, lines), token.CommentModule(":" <> _)
+    -> DocState(True, list.append(lines, [open, line]))
 
-    DocState(True, lines), token.CommentDoc(":" <> _) ->
-      DocState(..state, lines: list.append(lines, [line]))
+    DocState(True, lines), token.CommentDoc(":" <> _)
+    | DocState(True, lines), token.CommentModule(":" <> _)
+    -> DocState(..state, lines: list.append(lines, [line]))
 
     DocState(True, lines), _ ->
       DocState(False, list.append(lines, [line, close]))
@@ -65,9 +68,10 @@ fn fold_doc_state(state: DocState, line: token.Token) {
   }
 }
 
-pub fn is_commentdoc(t: token.Token) -> Bool {
+pub fn is_doc(t: token.Token) -> Bool {
   case t {
     token.CommentDoc(_) -> True
+    token.CommentModule(_) -> True
     _ -> False
   }
 }
@@ -75,6 +79,7 @@ pub fn is_commentdoc(t: token.Token) -> Bool {
 pub fn is_doctest_line(t: token.Token) -> Bool {
   case t {
     token.CommentDoc(":" <> _) -> True
+    token.CommentModule(":" <> _) -> True
     _ -> False
   }
 }

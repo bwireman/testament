@@ -1,3 +1,7 @@
+//// Example Module docs
+////: import example
+////: assert example.add(1, 0) == example.sub(2, 1)
+
 ///other comment
 /// ```
 ///: import example

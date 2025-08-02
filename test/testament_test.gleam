@@ -26,22 +26,22 @@ pub fn get_test_file_name_test() {
     == "test/testament/foo/bar/example_doc_test.gleam"
 }
 
-pub fn is_commentdoc_test() {
-  assert util.is_commentdoc(token.CommentDoc(""))
-  assert util.is_commentdoc(token.CommentDoc(":"))
-  assert !util.is_commentdoc(token.CommentModule(""))
-  assert !util.is_commentdoc(token.CommentModule(":"))
-  assert !util.is_commentdoc(token.CommentNormal(""))
-  assert !util.is_commentdoc(token.CommentNormal(":"))
+pub fn is_doc_test() {
+  assert util.is_doc(token.CommentDoc(""))
+  assert util.is_doc(token.CommentDoc(":"))
+  assert util.is_doc(token.CommentModule(""))
+  assert util.is_doc(token.CommentModule(":"))
+  assert !util.is_doc(token.CommentNormal(""))
+  assert !util.is_doc(token.CommentNormal(":"))
 }
 
 pub fn is_doctest_line_test() {
   assert util.is_doctest_line(token.CommentDoc(":"))
+  assert util.is_doctest_line(token.CommentModule(":"))
   assert !util.is_doctest_line(token.CommentDoc(""))
   assert !util.is_doctest_line(token.CommentModule(""))
-  assert !util.is_doctest_line(token.CommentModule(":"))
   assert !util.is_doctest_line(token.CommentNormal(""))
-  assert !util.is_doctest_line(token.CommentModule(":"))
+  assert !util.is_doctest_line(token.CommentNormal(":"))
 }
 
 pub fn split_imports_and_code_test() {
@@ -118,6 +118,15 @@ pub fn add(x: Int, y: Int) {
 ///: import gleam/list
 ///: import gleam/io
 ///```
+",
+  )
+
+  snapshot_doc_test(
+    "module docs",
+    "////```
+////: import gleam/io
+////: assert 1 + 1 == 2
+////```
 ",
   )
 }
