@@ -13,12 +13,14 @@ gleam add --dev testament@1
 
 ### Write some beautiful gleam code with Doc Comments
 
+(Note that all doc test lines need to be Doc Comments and start with `:`)
+
 ````gleam
 ///adds two Ints
 ///```gleam
-///:> import example
-///:> assert example.add(1, 2) == 3
-///:> assert example.add(1, -1) == 0
+///: import example
+///: assert example.add(1, 2) == 3
+///: assert example.add(1, -1) == 0
 /// ```
 pub fn add(a: Int, b: Int) -> Int {
   a + b
@@ -57,7 +59,7 @@ gleam test
 echo -e "\n*_doc_test.gleam" >> .gitignore
 ```
 
-### If running with Deno set
+### If running with Deno
 
 ```toml
 [javascript.deno]

@@ -19,8 +19,7 @@ allow_env = ["TESTAMENT_WITH_DOCS", "PATHEXT", "PATH"]
 allow_run = ["gleam"]
 
 [dependencies]
-gleam_stdlib = ">= 0.44.0 and < 2.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
-testament = {path = "../"}
+testament = { path = "../" }

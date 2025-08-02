@@ -4,11 +4,11 @@ title: reduces imports
 ---
 src:
 ///```
-///:> import gleam/io
-///:> import gleam/string
-///:> import gleam/list
-///:> import gleam/list
-///:> import gleam/io
+///: import gleam/io
+///: import gleam/string
+///: import gleam/list
+///: import gleam/list
+///: import gleam/io
 ///```
 
 

@@ -24,9 +24,9 @@ Write some beautiful gleam code with Doc Comments
 ```gleam
 ///adds two Ints
 ///```
-///:> import example
-///:> assert example.add(1, 2) == 3
-///:> assert example.add(1, -1) == 0
+///: import example
+///: assert example.add(1, 2) == 3
+///: assert example.add(1, -1) == 0
 /// ```
 pub fn add(a: Int, b: Int) -> Int {
   a + b

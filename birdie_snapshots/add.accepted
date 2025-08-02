@@ -4,9 +4,9 @@ title: add
 ---
 src:
 ///```
-///:> import gleam/io
-///:> assert add(1, 1) == 2
-///:> assert add(0, 0) == 0
+///: import gleam/io
+///: assert add(1, 1) == 2
+///: assert add(0, 0) == 0
 ///```
 pub fn add(x: Int, y: Int) {
   x + y

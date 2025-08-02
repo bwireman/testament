@@ -5,18 +5,18 @@ title: multiple
 src:
 /// add numbers
 ///```
-///:> import gleam/io
-///:> assert add(1, 1) == 2
-///:> assert add(0, 0) == 0
+///: import gleam/io
+///: assert add(1, 1) == 2
+///: assert add(0, 0) == 0
 ///```
 pub fn add(x: Int, y: Int) {
   x + y
 }
 
 /// subtracts numbers
-///:> import gleam/io
-///:> assert sub(1, 1) == 0
-///:> assert sub(1, 0) == 1
+///: import gleam/io
+///: assert sub(1, 1) == 0
+///: assert sub(1, 0) == 1
 pub fn sub(x: Int, y: Int) {
   x - y
 }

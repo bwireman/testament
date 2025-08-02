@@ -27,20 +27,20 @@ pub fn get_test_file_name_test() {
 
 pub fn is_commentdoc_test() {
   assert util.is_commentdoc(token.CommentDoc(""))
-  assert util.is_commentdoc(token.CommentDoc(":>"))
+  assert util.is_commentdoc(token.CommentDoc(":"))
   assert !util.is_commentdoc(token.CommentModule(""))
-  assert !util.is_commentdoc(token.CommentModule(":>"))
+  assert !util.is_commentdoc(token.CommentModule(":"))
   assert !util.is_commentdoc(token.CommentNormal(""))
-  assert !util.is_commentdoc(token.CommentNormal(":>"))
+  assert !util.is_commentdoc(token.CommentNormal(":"))
 }
 
 pub fn is_doctest_line_test() {
-  assert util.is_doctest_line(token.CommentDoc(":>"))
+  assert util.is_doctest_line(token.CommentDoc(":"))
   assert !util.is_doctest_line(token.CommentDoc(""))
   assert !util.is_doctest_line(token.CommentModule(""))
-  assert !util.is_doctest_line(token.CommentModule(":>"))
+  assert !util.is_doctest_line(token.CommentModule(":"))
   assert !util.is_doctest_line(token.CommentNormal(""))
-  assert !util.is_doctest_line(token.CommentModule(":>"))
+  assert !util.is_doctest_line(token.CommentModule(":"))
 }
 
 pub fn split_imports_and_code_test() {
@@ -56,9 +56,9 @@ pub fn get_doc_tests_imports_and_code_test() {
   snapshot_doc_test(
     "add",
     "///```
-///:> import gleam/io
-///:> assert add(1, 1) == 2
-///:> assert add(0, 0) == 0
+///: import gleam/io
+///: assert add(1, 1) == 2
+///: assert add(0, 0) == 0
 ///```
 pub fn add(x: Int, y: Int) {
   x + y
@@ -80,18 +80,18 @@ pub fn add(x: Int, y: Int) {
     "multiple",
     "/// add numbers
 ///```
-///:> import gleam/io
-///:> assert add(1, 1) == 2
-///:> assert add(0, 0) == 0
+///: import gleam/io
+///: assert add(1, 1) == 2
+///: assert add(0, 0) == 0
 ///```
 pub fn add(x: Int, y: Int) {
   x + y
 }
 
 /// subtracts numbers
-///:> import gleam/io
-///:> assert sub(1, 1) == 0
-///:> assert sub(1, 0) == 1
+///: import gleam/io
+///: assert sub(1, 1) == 0
+///: assert sub(1, 0) == 1
 pub fn sub(x: Int, y: Int) {
   x - y
 }",
@@ -100,8 +100,8 @@ pub fn sub(x: Int, y: Int) {
   snapshot_doc_test(
     "doc comments only",
     "///```
-//:> import gleam/io
-//:> assert add(1, 1) == 2
+//: import gleam/io
+//: assert add(1, 1) == 2
 ///```
 pub fn add(x: Int, y: Int) {
   x + y
@@ -111,11 +111,11 @@ pub fn add(x: Int, y: Int) {
   snapshot_doc_test(
     "reduces imports",
     "///```
-///:> import gleam/io
-///:> import gleam/string
-///:> import gleam/list
-///:> import gleam/list
-///:> import gleam/io
+///: import gleam/io
+///: import gleam/string
+///: import gleam/list
+///: import gleam/list
+///: import gleam/io
 ///```
 ",
   )
