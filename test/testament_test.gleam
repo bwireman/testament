@@ -20,9 +20,10 @@ fn snapshot_doc_test(title: String, src: String) {
 }
 
 pub fn get_test_file_name_test() {
-  assert util.get_test_file_name("src/x.gleam") == "test/x_doc_test.gleam"
+  assert util.get_test_file_name("src/x.gleam")
+    == "test/testament/x_doc_test.gleam"
   assert util.get_test_file_name("src/foo/bar/example.gleam")
-    == "test/foo/bar/example_doc_test.gleam"
+    == "test/testament/foo/bar/example_doc_test.gleam"
 }
 
 pub fn is_commentdoc_test() {

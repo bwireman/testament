@@ -15,6 +15,7 @@ pub fn get_test_file_name(file: String) -> String {
   file
   |> string.replace("src", "")
   |> string.replace(".gleam", "_doc_test.gleam")
+  |> filepath.join("testament", _)
   |> filepath.join("test", _)
 }
 

@@ -65,12 +65,7 @@ pub fn main() -> Nil {
 
     ["clean", "all"] -> {
       let _ = clean_doc_tests()
-      let assert Ok(test_files) = simplifile.get_files("test")
-
-      let _ =
-        test_files
-        |> list.filter(string.ends_with(_, "_doc_test.gleam"))
-        |> simplifile.delete_all()
+      let _ = simplifile.delete(filepath.join("test", "testament"))
 
       Nil
     }
