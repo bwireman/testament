@@ -43,18 +43,44 @@ pub fn is_doc_test() {
 
 pub fn is_doctest_line_test() {
   assert util.is_doctest_line(token.CommentDoc(":"))
-  assert util.is_doctest_line(token.CommentModule(":"))
   assert !util.is_doctest_line(token.CommentDoc(""))
+  assert util.is_doctest_line(token.CommentModule(":"))
   assert !util.is_doctest_line(token.CommentModule(""))
-  assert !util.is_doctest_line(token.CommentNormal(""))
   assert !util.is_doctest_line(token.CommentNormal(":"))
+  assert !util.is_doctest_line(token.CommentNormal(""))
+}
+
+pub fn fold_doc_state_test() {
+  assert util.DocState(False, [])
+    |> util.fold_doc_state(token.CommentDoc(": "))
+    == util.DocState(True, [token.CommentDoc(": "), token.CommentDoc(":{")])
+
+  assert util.DocState(False, [])
+    |> util.fold_doc_state(token.CommentModule(": "))
+    == util.DocState(True, [token.CommentModule(": "), token.CommentDoc(":{")])
+
+  assert util.DocState(True, [])
+    |> util.fold_doc_state(token.CommentDoc(": "))
+    == util.DocState(True, [token.CommentDoc(": ")])
+
+  assert util.DocState(True, [])
+    |> util.fold_doc_state(token.CommentModule(": "))
+    == util.DocState(True, [token.CommentModule(": ")])
+
+  assert util.DocState(True, [])
+    |> util.fold_doc_state(token.CommentDoc(" "))
+    == util.DocState(False, [token.CommentDoc(":}")])
+
+  assert util.DocState(True, [])
+    |> util.fold_doc_state(token.CommentModule(" "))
+    == util.DocState(False, [token.CommentDoc(":}")])
 }
 
 pub fn split_imports_and_code_test() {
-  assert util.split_imports_and_code(#([], []), "import foo")
-    == #(["import foo"], [])
-  assert util.split_imports_and_code(#([], []), "let x = 1")
-    == #([], ["let x = 1"])
+  let x = #([], [])
+
+  assert util.split_imports_and_code(x, "import foo") == #(["import foo"], [])
+  assert util.split_imports_and_code(x, "let x = 1") == #([], ["let x = 1"])
 }
 
 pub fn get_doc_tests_imports_and_code_test() {
@@ -134,5 +160,16 @@ pub fn add(x: Int, y: Int) {
 ////: assert 1 + 1 == 2
 ////```
 ",
+  )
+
+  snapshot_doc_test(
+    "weird formatting",
+    "///```
+///:  import  gleam/io
+///:assert  add(1 , 1)  ==  2
+///```
+pub fn add(x: Int, y: Int) {
+  x + y
+}",
   )
 }

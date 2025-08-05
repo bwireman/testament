@@ -3,13 +3,7 @@ set -e
 cd "$(dirname "$0")/.."
 
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 NC='\033[0m'
-
-function snooze() {
-    echo -e "${YELLOW}😴 Snooze...${NC}"
-    sleep "$1"
-}
 
 deno fmt
 gleam format

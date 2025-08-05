@@ -8,7 +8,7 @@ import shellout
 import simplifile
 import testament/internal/util
 
-const help = "Testament 📖
+const help = "📖 Testament
 Doc tests for gleam! ✨
 
 - `clean`: delete doc test files
@@ -73,7 +73,10 @@ pub fn main() -> Nil {
 
     ["-h"] | ["h"] | ["--help"] | ["help"] -> io.println(help)
 
-    _ -> io.print_error("Unknown command")
+    _ -> {
+      io.print_error("Unknown command")
+      shellout.exit(1)
+    }
   }
 }
 
@@ -93,22 +96,24 @@ const js_args = ["javascript", "--runtime"]
 /// ```
 pub fn test_main(run_tests: fn() -> Nil) -> Nil {
   let assert Ok(files) = simplifile.get_files("src")
+    as "could not read 'src' directory"
 
-  let assert Ok(_) =
+  let assert Ok(Nil) =
     list.try_each(files, fn(file) {
       util.create_tests_for_file(file, [util.import_from_file_name(file)])
     })
-  case envoy.get(docs_env_var) {
-    Ok("1") -> run_tests()
+    as "failed to read source files"
 
-    Error(_) | Ok(_) -> {
+  case envoy.get(docs_env_var) {
+    Ok(_) -> run_tests()
+
+    Error(_) -> {
       let args = case platform.runtime() {
         platform.Erlang -> ["erlang"]
         platform.Bun -> list.append(js_args, ["bun"])
         platform.Deno -> list.append(js_args, ["deno"])
         platform.Node -> list.append(js_args, ["node"])
-        platform.Browser | platform.OtherRuntime(_) ->
-          panic as "testament: invalid runtime or target"
+        _ -> panic as "testament: invalid runtime or target"
       }
 
       let _ =
@@ -118,7 +123,9 @@ pub fn test_main(run_tests: fn() -> Nil) -> Nil {
           shellout.SetEnvironment([#(docs_env_var, "1")]),
         ])
 
-      let assert Ok(_) = util.clean_doc_tests()
+      let assert Ok(Nil) = util.clean_doc_tests() as "failed to clean doc test"
+      let assert Ok(Nil) = simplifile.delete(filepath.join("test", "testament"))
+        as "failed to clean doc test"
 
       Nil
     }
