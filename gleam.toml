@@ -1,5 +1,5 @@
 name = "testament"
-version = "0.1.0"
+version = "0.1.1"
 licences = ["MIT"]
 repository = { type = "github", user = "bwireman", repo = "testament" }
 description = "Doc tests for Gleam ✨!"
