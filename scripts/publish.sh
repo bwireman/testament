@@ -16,7 +16,7 @@ if [ "$BRANCH" != "main" ]; then
     exit 1
 fi
 
-gleam format
+./scripts/format.sh
 ./scripts/update.sh
 ./scripts/test.sh
 

@@ -11,7 +11,7 @@ gleam add --dev testament@1
 
 ## Usage:
 
-### Write some beautiful gleam code with Doc Comments
+### Write some beautiful gleam code with Doc Comments 📒
 
 (Note that all doc test lines need to be Doc Comments or Module comments and
 start with `:`)
@@ -43,7 +43,7 @@ pub fn main() -> Nil {
 }
 ```
 
-### Enjoy
+### ✨ Enjoy
 
 ```bash
 gleam test
@@ -54,9 +54,9 @@ gleam test
 1 test, no failures
 ```
 
-## Note
+### Note
 
-### If seeing files you don't want checked in
+#### If seeing files you don't want checked in
 
 (these should get deleted after the run)
 
@@ -64,7 +64,7 @@ gleam test
 echo -e "\ntest/testament/*" >> .gitignore
 ```
 
-### If running with Deno
+#### If running with Deno
 
 ```toml
 [javascript.deno]

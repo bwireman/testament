@@ -21,28 +21,36 @@ pub fn get_test_file_name(file: String) -> String {
   |> filepath.join("test", _)
 }
 
+pub type DocState {
+  DocState(in: Bool, lines: List(token.Token))
+}
+
 pub fn get_doc_tests_imports_and_code(
   code: String,
   other_imports: List(String),
 ) -> #(String, String) {
-  let cases =
+  let prefix_len = string.length(prefix)
+
+  let state =
     code
     |> glexer.new()
+    |> glexer.discard_whitespace()
     |> glexer.lex()
     |> list.map(pair.first)
     |> list.filter(is_doc)
     |> list.fold(DocState(False, []), fold_doc_state)
 
-  let lines = case cases.in {
-    True -> list.append(cases.lines, [close])
-    _ -> cases.lines
+  let lines = case state.in {
+    True -> [close, ..state.lines]
+    _ -> state.lines
   }
 
   lines
+  |> list.reverse()
   |> list.filter(is_doctest_line)
   |> list.map(token.to_source)
   |> list.map(string.crop(_, prefix))
-  |> list.map(string.drop_start(_, 1))
+  |> list.map(string.drop_start(_, prefix_len))
   |> list.map(string.trim)
   |> list.fold(#(other_imports, []), split_imports_and_code)
   |> pair.map_first(list.unique)
@@ -50,37 +58,32 @@ pub fn get_doc_tests_imports_and_code(
   |> pair.map_second(string.join(_, "\n"))
 }
 
-type DocState {
-  DocState(in: Bool, lines: List(token.Token))
-}
-
-fn fold_doc_state(state: DocState, line: token.Token) {
+pub fn fold_doc_state(state: DocState, line: token.Token) {
   case state, line {
     DocState(False, lines), token.CommentDoc(":" <> _)
     | DocState(False, lines), token.CommentModule(":" <> _)
-    -> DocState(True, list.append(lines, [open, line]))
+    -> DocState(True, lines: [line, open, ..lines])
 
     DocState(True, lines), token.CommentDoc(":" <> _)
     | DocState(True, lines), token.CommentModule(":" <> _)
-    -> DocState(..state, lines: list.append(lines, [line]))
+    -> DocState(..state, lines: [line, ..lines])
 
-    DocState(True, lines), _ ->
-      DocState(False, list.append(lines, [line, close]))
+    DocState(True, lines), _ -> DocState(False, lines: [close, ..lines])
 
-    _, _ -> DocState(..state, lines: list.append(state.lines, [line]))
+    _, _ -> state
   }
 }
 
-pub fn is_doc(t: token.Token) -> Bool {
-  case t {
+pub fn is_doc(line: token.Token) -> Bool {
+  case line {
     token.CommentDoc(_) -> True
     token.CommentModule(_) -> True
     _ -> False
   }
 }
 
-pub fn is_doctest_line(t: token.Token) -> Bool {
-  case t {
+pub fn is_doctest_line(line: token.Token) -> Bool {
+  case line {
     token.CommentDoc(":" <> _) -> True
     token.CommentModule(":" <> _) -> True
     _ -> False
@@ -104,18 +107,23 @@ pub fn clean_doc_tests() -> Result(Nil, simplifile.FileError) {
   |> simplifile.delete_all()
 }
 
-pub fn import_from_file_name(file: String) {
+pub fn import_from_file_name(file: String) -> String {
   let assert Ok(module) =
     file
-    |> filepath.strip_extension
+    |> filepath.strip_extension()
     |> filepath.split()
     |> list.rest()
+    as { "could not construct file name for '" <> file <> "'" }
 
   "import " <> list.fold(module, "", filepath.join)
 }
 
-pub fn create_tests_for_file(file: String, extra_imports: List(String)) {
+pub fn create_tests_for_file(
+  file: String,
+  extra_imports: List(String),
+) -> Result(Nil, simplifile.FileError) {
   let assert Ok(file_content) = simplifile.read(file)
+    as { "could not read file '" <> file <> "'" }
 
   let #(imports, code) =
     get_doc_tests_imports_and_code(file_content, extra_imports)
@@ -136,6 +144,7 @@ pub fn create_tests_for_file(file: String, extra_imports: List(String)) {
       let _ = simplifile.delete(test_file_name)
 
       let assert Ok(Nil) = simplifile.append(test_file_name, test_content)
+        as { "could not create doc tests for file '" <> file <> "'" }
     }
   }
 }
