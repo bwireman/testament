@@ -21,7 +21,7 @@ fi
 ./scripts/test.sh
 
 if [ -n "$(git status --porcelain)" ]; then
-    echo "Working dir mush be clean"
+    echo "Working dir must be clean"
     exit 1
 fi
 

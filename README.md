@@ -17,11 +17,12 @@ gleam add --dev testament@1
 start with `:`)
 
 ````gleam
-////Example Module
+////Example Module doc test
 ////```gleam
 ////: assert 1 + 1 == 2
 ////```
 
+///Example function doc test
 ///adds two Ints
 ///```gleam
 ///: assert example.add(1, 2) == 3

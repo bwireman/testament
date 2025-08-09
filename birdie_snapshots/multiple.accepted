@@ -25,15 +25,14 @@ pub fn sub(x: Int, y: Int) {
 
 imports:
 import gleam/io
+import gleam/io
 
 ====================
 
 code:
-{
 assert add(1, 1) == 2
 assert add(0, 0) == 0
-}
-{
+####################
+
 assert sub(1, 1) == 0
 assert sub(1, 0) == 1
-}

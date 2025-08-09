@@ -19,6 +19,4 @@ import  gleam/io
 ====================
 
 code:
-{
 assert  add(1 , 1)  ==  2
-}
