@@ -30,4 +30,7 @@ cd example
 gleam update
 
 # shellcheck disable=SC2086
+gleam dev $CMD
+
+# shellcheck disable=SC2086
 gleam test $CMD

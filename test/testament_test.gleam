@@ -1,8 +1,11 @@
 import birdie
 import glam/doc
+import gleam/dict
 import gleam/list
+import gleam/string
 import gleeunit
 import glexer/token
+import testament/conf
 import testament/internal/util
 
 pub fn main() -> Nil {
@@ -10,9 +13,13 @@ pub fn main() -> Nil {
 }
 
 fn snapshot_doc_test(title: String, src: String) {
-  let #(imports, code) = util.get_doc_tests_imports_and_code(src, [])
+  let #(imports, code) = util.get_doc_tests_imports_and_code(src)
 
-  ["src:\n" <> src, "imports:\n" <> imports, "code:\n" <> code]
+  [
+    "src:\n" <> src,
+    "imports:\n" <> string.join(imports, "\n"),
+    "code:\n" <> string.join(code, "\n####################\n\n"),
+  ]
   |> list.map(doc.from_string)
   |> doc.concat_join([doc.from_string("\n\n====================\n\n")])
   |> doc.to_string(99)
@@ -39,6 +46,8 @@ pub fn is_doc_test() {
   assert util.is_doc(token.CommentModule(":"))
   assert !util.is_doc(token.CommentNormal(""))
   assert !util.is_doc(token.CommentNormal(":"))
+  assert !util.is_doc(token.UpperName(""))
+  assert !util.is_doc(token.UpperName(":"))
 }
 
 pub fn is_doctest_line_test() {
@@ -48,32 +57,48 @@ pub fn is_doctest_line_test() {
   assert !util.is_doctest_line(token.CommentModule(""))
   assert !util.is_doctest_line(token.CommentNormal(":"))
   assert !util.is_doctest_line(token.CommentNormal(""))
+  assert !util.is_doctest_line(token.UpperName(":"))
+  assert !util.is_doctest_line(token.UpperName(""))
 }
 
 pub fn fold_doc_state_test() {
-  assert util.DocState(False, [])
+  assert util.DocState(False, [], [])
+    |> util.fold_doc_state(token.String(": "))
+    == util.DocState(False, [], [])
+
+  assert util.DocState(False, [], [])
     |> util.fold_doc_state(token.CommentDoc(": "))
-    == util.DocState(True, [token.CommentDoc(": "), token.CommentDoc(":{")])
+    == util.DocState(True, [token.CommentDoc(": ")], [])
 
-  assert util.DocState(False, [])
+  assert util.DocState(False, [], [])
     |> util.fold_doc_state(token.CommentModule(": "))
-    == util.DocState(True, [token.CommentModule(": "), token.CommentDoc(":{")])
+    == util.DocState(True, [token.CommentModule(": ")], [])
 
-  assert util.DocState(True, [])
+  assert util.DocState(True, [], [])
     |> util.fold_doc_state(token.CommentDoc(": "))
-    == util.DocState(True, [token.CommentDoc(": ")])
+    == util.DocState(True, [token.CommentDoc(": ")], [])
 
-  assert util.DocState(True, [])
+  assert util.DocState(True, [], [])
     |> util.fold_doc_state(token.CommentModule(": "))
-    == util.DocState(True, [token.CommentModule(": ")])
+    == util.DocState(True, [token.CommentModule(": ")], [])
 
-  assert util.DocState(True, [])
+  assert util.DocState(True, [token.CommentModule(": let x = 2 + 2")], [])
+    |> util.fold_doc_state(token.CommentModule(": assert x == 4"))
+    |> util.fold_doc_state(token.CommentModule("pub fn x"))
+    == util.DocState(False, [], [
+      [
+        token.CommentModule(": let x = 2 + 2"),
+        token.CommentModule(": assert x == 4"),
+      ],
+    ])
+
+  assert util.DocState(True, [], [])
     |> util.fold_doc_state(token.CommentDoc(" "))
-    == util.DocState(False, [token.CommentDoc(":}")])
+    == util.DocState(False, [], [[]])
 
-  assert util.DocState(True, [])
+  assert util.DocState(True, [], [])
     |> util.fold_doc_state(token.CommentModule(" "))
-    == util.DocState(False, [token.CommentDoc(":}")])
+    == util.DocState(False, [], [[]])
 }
 
 pub fn split_imports_and_code_test() {
@@ -84,8 +109,8 @@ pub fn split_imports_and_code_test() {
 }
 
 pub fn get_doc_tests_imports_and_code_test() {
-  assert util.get_doc_tests_imports_and_code("", []) == #("", "")
-  assert util.get_doc_tests_imports_and_code("   ", []) == #("", "")
+  assert util.get_doc_tests_imports_and_code("") == #([], [])
+  assert util.get_doc_tests_imports_and_code("   ") == #([], [])
   snapshot_doc_test(
     "add",
     "///```
@@ -131,7 +156,7 @@ pub fn sub(x: Int, y: Int) {
   )
 
   snapshot_doc_test(
-    "doc comments only",
+    "normal comments",
     "///```
 //: import gleam/io
 //: assert add(1, 1) == 2
@@ -139,18 +164,6 @@ pub fn sub(x: Int, y: Int) {
 pub fn add(x: Int, y: Int) {
   x + y
 }",
-  )
-
-  snapshot_doc_test(
-    "reduces imports",
-    "///```
-///: import gleam/io
-///: import gleam/string
-///: import gleam/list
-///: import gleam/list
-///: import gleam/io
-///```
-",
   )
 
   snapshot_doc_test(
@@ -172,4 +185,56 @@ pub fn add(x: Int, y: Int) {
   x + y
 }",
   )
+}
+
+pub fn combine_conf_values_test() {
+  assert util.combine_conf_values([])
+    == util.Config(
+      ignore_files: [],
+      verbose: False,
+      preserve_files: False,
+      extra_imports: dict.new(),
+    )
+
+  assert util.combine_conf_values([conf.PreserveFiles])
+    == util.Config(
+      ignore_files: [],
+      verbose: False,
+      preserve_files: True,
+      extra_imports: dict.new(),
+    )
+
+  assert util.combine_conf_values([conf.Verbose])
+    == util.Config(
+      ignore_files: [],
+      verbose: True,
+      preserve_files: False,
+      extra_imports: dict.new(),
+    )
+
+  assert util.combine_conf_values([
+      conf.IgnoreFiles(["foo", "bar"]),
+      conf.IgnoreFiles(["baz"]),
+    ])
+    == util.Config(
+      ignore_files: ["foo", "bar", "baz"],
+      verbose: False,
+      preserve_files: False,
+      extra_imports: dict.new(),
+    )
+
+  assert util.combine_conf_values([
+      conf.ExtraImports("foo", ["bar"]),
+      conf.ExtraImports("bar", ["foo"]),
+      conf.ExtraImports("baz", ["baz", "foo", "bar"]),
+    ])
+    == util.Config(
+      ignore_files: [],
+      verbose: False,
+      preserve_files: False,
+      extra_imports: dict.new()
+        |> dict.insert("foo", ["import bar"])
+        |> dict.insert("bar", ["import foo"])
+        |> dict.insert("baz", ["import baz", "import foo", "import bar"]),
+    )
 }

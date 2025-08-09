@@ -1,4 +1,7 @@
 import filepath
+import gleam/dict
+import gleam/int
+import gleam/io
 import gleam/list
 import gleam/pair
 import gleam/result
@@ -6,12 +9,9 @@ import gleam/string
 import glexer
 import glexer/token
 import simplifile
+import testament/conf
 
 const prefix = ":"
-
-const open = token.CommentDoc(prefix <> "{")
-
-const close = token.CommentDoc(prefix <> "}")
 
 pub fn get_test_file_name(file: String) -> String {
   file
@@ -22,53 +22,73 @@ pub fn get_test_file_name(file: String) -> String {
 }
 
 pub type DocState {
-  DocState(in: Bool, lines: List(token.Token))
+  DocState(
+    in: Bool,
+    lines: List(token.Token),
+    test_bodies: List(List(token.Token)),
+  )
 }
+
+pub type Import =
+  String
+
+pub type CodeBlock =
+  String
 
 pub fn get_doc_tests_imports_and_code(
   code: String,
-  other_imports: List(String),
-) -> #(String, String) {
+) -> #(List(Import), List(CodeBlock)) {
   let prefix_len = string.length(prefix)
 
-  let state =
-    code
-    |> glexer.new()
-    |> glexer.discard_whitespace()
-    |> glexer.lex()
-    |> list.map(pair.first)
-    |> list.filter(is_doc)
-    |> list.fold(DocState(False, []), fold_doc_state)
+  code
+  |> glexer.new()
+  |> glexer.discard_whitespace()
+  |> glexer.lex()
+  |> list.map(pair.first)
+  |> list.filter(is_doc)
+  |> collect_test_lines()
+  |> list.map(fn(tokens) {
+    tokens
+    |> list.filter(is_doctest_line)
+    |> list.map(token.to_source)
+    |> list.map(string.crop(_, prefix))
+    |> list.map(string.drop_start(_, prefix_len))
+    |> list.map(string.trim)
+    |> list.fold(#([], []), split_imports_and_code)
+    |> pair.map_second(string.join(_, "\n"))
+  })
+  |> list.fold(#([], []), fn(acc, block) {
+    acc
+    |> pair.map_first(list.append(_, pair.first(block)))
+    |> pair.map_second(list.prepend(_, pair.second(block)))
+  })
+}
 
-  let lines = case state.in {
-    True -> [close, ..state.lines]
-    _ -> state.lines
+pub fn collect_test_lines(tokens: List(token.Token)) -> List(List(token.Token)) {
+  let state = list.fold(tokens, DocState(False, [], []), fold_doc_state)
+
+  case state.lines {
+    [] -> state.test_bodies
+    _ -> list.prepend(state.test_bodies, list.reverse(state.lines))
   }
-
-  lines
-  |> list.reverse()
-  |> list.filter(is_doctest_line)
-  |> list.map(token.to_source)
-  |> list.map(string.crop(_, prefix))
-  |> list.map(string.drop_start(_, prefix_len))
-  |> list.map(string.trim)
-  |> list.fold(#(other_imports, []), split_imports_and_code)
-  |> pair.map_first(list.unique)
-  |> pair.map_first(string.join(_, "\n"))
-  |> pair.map_second(string.join(_, "\n"))
 }
 
 pub fn fold_doc_state(state: DocState, line: token.Token) {
   case state, line {
-    DocState(False, lines), token.CommentDoc(":" <> _)
-    | DocState(False, lines), token.CommentModule(":" <> _)
-    -> DocState(True, lines: [line, open, ..lines])
+    DocState(False, lines, _), token.CommentDoc(":" <> _)
+    | DocState(False, lines, _), token.CommentModule(":" <> _)
+    -> DocState(..state, in: True, lines: [line, ..lines])
 
-    DocState(True, lines), token.CommentDoc(":" <> _)
-    | DocState(True, lines), token.CommentModule(":" <> _)
+    DocState(True, lines, _), token.CommentDoc(":" <> _)
+    | DocState(True, lines, _), token.CommentModule(":" <> _)
     -> DocState(..state, lines: [line, ..lines])
 
-    DocState(True, lines), _ -> DocState(False, lines: [close, ..lines])
+    DocState(True, lines, bodies), _ ->
+      DocState(
+        in: False,
+        lines: [],
+        test_bodies: list.prepend(bodies, list.reverse(lines)),
+      )
 
     _, _ -> state
   }
@@ -95,7 +115,7 @@ pub fn split_imports_and_code(
   line: String,
 ) -> #(List(String), List(String)) {
   case string.starts_with(line, "import") {
-    True -> pair.map_first(code, list.append(_, [line]))
+    True -> pair.map_first(code, list.prepend(_, line))
     False -> pair.map_second(code, list.append(_, [line]))
   }
 }
@@ -125,26 +145,85 @@ pub fn create_tests_for_file(
   let assert Ok(file_content) = simplifile.read(file)
     as { "could not read file '" <> file <> "'" }
 
-  let #(imports, code) =
-    get_doc_tests_imports_and_code(file_content, extra_imports)
+  let #(imports, tests) = get_doc_tests_imports_and_code(file_content)
 
-  case string.is_empty(code) {
-    True -> Ok(Nil)
+  case tests {
+    [] -> Ok(Nil)
     _ -> {
+      let imports =
+        list.append(imports, extra_imports)
+        |> list.unique()
+        |> string.join("\n")
+
       let test_file_name = get_test_file_name(file)
-
-      let _ =
-        test_file_name
-        |> filepath.directory_name()
-        |> simplifile.create_directory_all()
-
-      let test_content =
-        string.join([imports, "pub fn doc_test() {", code, "}"], "\n")
 
       let _ = simplifile.delete(test_file_name)
 
-      let assert Ok(Nil) = simplifile.append(test_file_name, test_content)
-        as { "could not create doc tests for file '" <> file <> "'" }
+      let assert Ok(Nil) =
+        test_file_name
+        |> filepath.directory_name()
+        |> simplifile.create_directory_all()
+        as "failed to create test doc directory"
+
+      let assert Ok(Nil) = simplifile.append(test_file_name, imports <> "\n")
+
+      list.index_map(tests, fn(code, index) {
+        string.join(
+          ["\npub fn doc" <> int.to_string(index) <> "_test() {", code, "}\n"],
+          "\n",
+        )
+        |> simplifile.append(test_file_name, _)
+      })
+      |> result.all()
+      |> result.replace(Nil)
     }
+  }
+}
+
+pub type Config {
+  Config(
+    ignore_files: List(String),
+    verbose: Bool,
+    preserve_files: Bool,
+    extra_imports: dict.Dict(String, List(String)),
+  )
+}
+
+pub fn combine_conf_values(opts: List(conf.Conf)) -> Config {
+  list.fold(
+    opts,
+    Config(
+      ignore_files: [],
+      verbose: False,
+      preserve_files: False,
+      extra_imports: dict.new(),
+    ),
+    fn(cfg, opt) {
+      case opt {
+        conf.ExtraImports(file, imports) ->
+          Config(
+            ..cfg,
+            extra_imports: dict.insert(
+              cfg.extra_imports,
+              file,
+              imports
+                |> list.map(string.trim)
+                |> list.map(string.append("import ", _)),
+            ),
+          )
+        conf.IgnoreFiles(files) ->
+          Config(..cfg, ignore_files: list.append(cfg.ignore_files, files))
+        conf.PreserveFiles -> Config(..cfg, preserve_files: True)
+
+        conf.Verbose -> Config(..cfg, verbose: True)
+      }
+    },
+  )
+}
+
+pub fn verbose_log(log: Bool, msg: String) {
+  case log {
+    True -> io.println("testament: " <> msg)
+    False -> Nil
   }
 }

@@ -23,3 +23,5 @@ allow_run = ["gleam"]
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
 testament = { path = "../" }
+gleam_stdlib = ">= 0.62.1 and < 1.0.0"
+simplifile = ">= 2.3.0 and < 3.0.0"

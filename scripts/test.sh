@@ -7,7 +7,6 @@ NC='\033[0m'
 
 deno fmt
 gleam format
-gleam update
 gleam build
 
 set +e
