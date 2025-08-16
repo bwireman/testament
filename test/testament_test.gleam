@@ -14,9 +14,12 @@ pub fn main() -> Nil {
   gleeunit.main()
 }
 
-fn snapshot_doc_test(title: String, src: String) {
-  let #(imports, code) = util.get_doc_tests_imports_and_code(src)
-
+fn prep_snapshot(
+  title: String,
+  src: String,
+  imports: List(String),
+  code: List(String),
+) {
   [
     "src:\n" <> src,
     "imports:\n" <> string.join(imports, "\n"),
@@ -28,18 +31,16 @@ fn snapshot_doc_test(title: String, src: String) {
   |> birdie.snap(title)
 }
 
+fn snapshot_doc_test(title: String, src: String) {
+  let #(imports, code) = util.get_doc_tests_imports_and_code(src)
+
+  prep_snapshot(title, src, imports, code)
+}
+
 fn snapshot_markdown_doc_test(title: String, src: String) {
   let #(imports, code) = markdown.parse_snippets(src)
 
-  [
-    "src:\n" <> src,
-    "imports:\n" <> string.join(imports, "\n"),
-    "code:\n" <> string.join(code, "\n####################\n\n"),
-  ]
-  |> list.map(doc.from_string)
-  |> doc.concat_join([doc.from_string("\n\n====================\n\n")])
-  |> doc.to_string(99)
-  |> birdie.snap(title)
+  prep_snapshot(title, src, imports, code)
 }
 
 pub fn get_test_file_name_test() {
