@@ -28,6 +28,20 @@ fn snapshot_doc_test(title: String, src: String) {
   |> birdie.snap(title)
 }
 
+fn snapshot_markdown_doc_test(title: String, src: String) {
+  let #(imports, code) = markdown.parse_snippets(src)
+
+  [
+    "src:\n" <> src,
+    "imports:\n" <> string.join(imports, "\n"),
+    "code:\n" <> string.join(code, "\n####################\n\n"),
+  ]
+  |> list.map(doc.from_string)
+  |> doc.concat_join([doc.from_string("\n\n====================\n\n")])
+  |> doc.to_string(99)
+  |> birdie.snap(title)
+}
+
 pub fn get_test_file_name_test() {
   assert util.get_test_file_name("src/x.gleam")
     == "test/testament/x_doc_test.gleam"
@@ -181,6 +195,7 @@ pub fn add(x: Int, y: Int) {
     "weird formatting",
     "///```
 ///:  import  gleam/io
+///:  import  gleam/io
 ///:assert  add(1 , 1)  ==  2
 ///```
 pub fn add(x: Int, y: Int) {
@@ -246,7 +261,7 @@ pub fn combine_conf_values_test() {
     )
 }
 
-pub fn markdown_test() {
+pub fn markdown_parse_snippets_test() {
   let assert Ok(code) = simplifile.read("test/markdown.md")
 
   assert markdown.parse_snippets(code)
@@ -254,4 +269,55 @@ pub fn markdown_test() {
       "\nlet x = 1 + 1\nassert x == 2",
       "\nassert int.add(1, 1) == 2",
     ])
+
+  snapshot_markdown_doc_test(
+    "basic no tests",
+    "
+# example
+
+1. one
+1. two
+1. three
+
+## foo
+bar
+### Bar
+baz
+",
+  )
+
+  snapshot_markdown_doc_test(
+    "basic",
+    "
+# example
+```gleam
+let x = 2
+assert x - 1 == 1
+```
+",
+  )
+
+  snapshot_markdown_doc_test(
+    "basic 4 ticks",
+    "
+# example
+````gleam
+let x = 2
+assert x - 1 == 1
+````
+",
+  )
+
+  snapshot_markdown_doc_test(
+    "basic import",
+    "
+# example
+```gleam
+import gleam/int
+import gleam/int
+let x = 2
+assert x - 1 == 1
+```
+",
+  )
 }

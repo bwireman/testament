@@ -5,6 +5,7 @@ title: weird formatting
 src:
 ///```
 ///:  import  gleam/io
+///:  import  gleam/io
 ///:assert  add(1 , 1)  ==  2
 ///```
 pub fn add(x: Int, y: Int) {

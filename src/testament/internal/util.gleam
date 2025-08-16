@@ -64,6 +64,7 @@ pub fn get_doc_tests_imports_and_code(
     |> pair.map_first(list.append(_, pair.first(block)))
     |> pair.map_second(list.prepend(_, pair.second(block)))
   })
+  |> pair.map_first(list.unique)
 }
 
 pub fn collect_test_lines(tokens: List(token.Token)) -> List(List(token.Token)) {
@@ -166,7 +167,10 @@ fn do_create_tests(filepath: String, imports: List(String), tests: List(String))
   case tests {
     [] -> Ok(Nil)
     _ -> {
-      let imports = string.join(imports, "\n")
+      let imports =
+        imports
+        |> list.unique()
+        |> string.join("\n")
 
       let test_file_name = get_test_file_name(filepath)
 

@@ -7,7 +7,7 @@ import glexer
 pub fn parse_snippets(content: String) -> #(List(String), List(String)) {
   let assert Ok(rg) =
     regexp.compile(
-      "^```gleam(?:\\s*(\\w+))?([\\s\\S]*?)^```$",
+      "^````?gleam(?:\\s*(\\w+))?([\\s\\S]*?)^````?$",
       regexp.Options(False, True),
     )
     as { "failed to compile markdown regex" }
@@ -16,8 +16,10 @@ pub fn parse_snippets(content: String) -> #(List(String), List(String)) {
   |> regexp.scan(content)
   |> list.map(fn(match) {
     match.content
-    |> string.drop_start(8)
-    |> string.drop_end(3)
+    |> string.replace("````gleam", "")
+    |> string.replace("```gleam", "")
+    |> string.replace("````", "")
+    |> string.replace("```", "")
     |> string.trim()
     |> glexer.new()
     |> glexer.discard_comments()
@@ -36,4 +38,5 @@ pub fn parse_snippets(content: String) -> #(List(String), List(String)) {
     |> pair.map_first(list.append(_, pair.first(block)))
     |> pair.map_second(list.append(_, [pair.second(block)]))
   })
+  |> pair.map_first(list.unique)
 }
