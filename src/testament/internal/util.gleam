@@ -10,12 +10,14 @@ import glexer
 import glexer/token
 import simplifile
 import testament/conf
+import testament/internal/markdown
 
 const prefix = ":"
 
 pub fn get_test_file_name(file: String) -> String {
   file
   |> string.replace("src", "")
+  |> string.replace(".md", "_md.gleam")
   |> string.replace(".gleam", "_doc_test.gleam")
   |> filepath.join("testament", _)
   |> filepath.join("test", _)
@@ -62,6 +64,7 @@ pub fn get_doc_tests_imports_and_code(
     |> pair.map_first(list.append(_, pair.first(block)))
     |> pair.map_second(list.prepend(_, pair.second(block)))
   })
+  |> pair.map_first(list.unique)
 }
 
 pub fn collect_test_lines(tokens: List(token.Token)) -> List(List(token.Token)) {
@@ -146,16 +149,30 @@ pub fn create_tests_for_file(
     as { "could not read file '" <> file <> "'" }
 
   let #(imports, tests) = get_doc_tests_imports_and_code(file_content)
+  do_create_tests(file, list.append(imports, extra_imports), tests)
+}
 
+pub fn create_tests_for_markdown_file(
+  file: String,
+  extra_imports: List(String),
+) -> Result(Nil, simplifile.FileError) {
+  let assert Ok(file_content) = simplifile.read(file)
+    as { "could not read file '" <> file <> "'" }
+
+  let #(imports, tests) = markdown.parse_snippets(file_content)
+  do_create_tests(file, list.append(imports, extra_imports), tests)
+}
+
+fn do_create_tests(filepath: String, imports: List(String), tests: List(String)) {
   case tests {
     [] -> Ok(Nil)
     _ -> {
       let imports =
-        list.append(imports, extra_imports)
+        imports
         |> list.unique()
         |> string.join("\n")
 
-      let test_file_name = get_test_file_name(file)
+      let test_file_name = get_test_file_name(filepath)
 
       let _ = simplifile.delete(test_file_name)
 
@@ -186,6 +203,7 @@ pub type Config {
     verbose: Bool,
     preserve_files: Bool,
     extra_imports: dict.Dict(String, List(String)),
+    markdown_files: List(String),
   )
 }
 
@@ -197,6 +215,7 @@ pub fn combine_conf_values(opts: List(conf.Conf)) -> Config {
       verbose: False,
       preserve_files: False,
       extra_imports: dict.new(),
+      markdown_files: [],
     ),
     fn(cfg, opt) {
       case opt {
@@ -216,6 +235,9 @@ pub fn combine_conf_values(opts: List(conf.Conf)) -> Config {
         conf.PreserveFiles -> Config(..cfg, preserve_files: True)
 
         conf.Verbose -> Config(..cfg, verbose: True)
+
+        conf.Markdown(files) ->
+          Config(..cfg, markdown_files: list.append(cfg.markdown_files, files))
       }
     },
   )

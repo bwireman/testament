@@ -5,16 +5,21 @@ import gleam/list
 import gleam/string
 import gleeunit
 import glexer/token
+import simplifile
 import testament/conf
+import testament/internal/markdown
 import testament/internal/util
 
 pub fn main() -> Nil {
   gleeunit.main()
 }
 
-fn snapshot_doc_test(title: String, src: String) {
-  let #(imports, code) = util.get_doc_tests_imports_and_code(src)
-
+fn prep_snapshot(
+  title: String,
+  src: String,
+  imports: List(String),
+  code: List(String),
+) {
   [
     "src:\n" <> src,
     "imports:\n" <> string.join(imports, "\n"),
@@ -24,6 +29,18 @@ fn snapshot_doc_test(title: String, src: String) {
   |> doc.concat_join([doc.from_string("\n\n====================\n\n")])
   |> doc.to_string(99)
   |> birdie.snap(title)
+}
+
+fn snapshot_doc_test(title: String, src: String) {
+  let #(imports, code) = util.get_doc_tests_imports_and_code(src)
+
+  prep_snapshot(title, src, imports, code)
+}
+
+fn snapshot_markdown_doc_test(title: String, src: String) {
+  let #(imports, code) = markdown.parse_snippets(src)
+
+  prep_snapshot(title, src, imports, code)
 }
 
 pub fn get_test_file_name_test() {
@@ -179,6 +196,7 @@ pub fn add(x: Int, y: Int) {
     "weird formatting",
     "///```
 ///:  import  gleam/io
+///:  import  gleam/io
 ///:assert  add(1 , 1)  ==  2
 ///```
 pub fn add(x: Int, y: Int) {
@@ -194,6 +212,7 @@ pub fn combine_conf_values_test() {
       verbose: False,
       preserve_files: False,
       extra_imports: dict.new(),
+      markdown_files: [],
     )
 
   assert util.combine_conf_values([conf.PreserveFiles])
@@ -202,6 +221,7 @@ pub fn combine_conf_values_test() {
       verbose: False,
       preserve_files: True,
       extra_imports: dict.new(),
+      markdown_files: [],
     )
 
   assert util.combine_conf_values([conf.Verbose])
@@ -210,6 +230,7 @@ pub fn combine_conf_values_test() {
       verbose: True,
       preserve_files: False,
       extra_imports: dict.new(),
+      markdown_files: [],
     )
 
   assert util.combine_conf_values([
@@ -221,6 +242,7 @@ pub fn combine_conf_values_test() {
       verbose: False,
       preserve_files: False,
       extra_imports: dict.new(),
+      markdown_files: [],
     )
 
   assert util.combine_conf_values([
@@ -236,5 +258,67 @@ pub fn combine_conf_values_test() {
         |> dict.insert("foo", ["import bar"])
         |> dict.insert("bar", ["import foo"])
         |> dict.insert("baz", ["import baz", "import foo", "import bar"]),
+      markdown_files: [],
     )
+}
+
+pub fn markdown_parse_snippets_test() {
+  let assert Ok(code) = simplifile.read("test/markdown.md")
+
+  assert markdown.parse_snippets(code)
+    == #(["import gleam/int"], [
+      "\nlet x = 1 + 1\nassert x == 2",
+      "\nassert int.add(1, 1) == 2",
+    ])
+
+  snapshot_markdown_doc_test(
+    "basic no tests",
+    "
+# example
+
+1. one
+1. two
+1. three
+
+## foo
+bar
+### Bar
+baz
+",
+  )
+
+  snapshot_markdown_doc_test(
+    "basic",
+    "
+# example
+```gleam
+let x = 2
+assert x - 1 == 1
+```
+",
+  )
+
+  snapshot_markdown_doc_test(
+    "basic 4 ticks",
+    "
+# example
+````gleam
+let x = 2
+assert x - 1 == 1
+````
+",
+  )
+
+  snapshot_markdown_doc_test(
+    "basic import",
+    "
+# example
+```gleam
+import gleam/int
+import gleam/int
+let x = 2
+assert x - 1 == 1
+```
+",
+  )
 }

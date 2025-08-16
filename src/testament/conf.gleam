@@ -8,4 +8,6 @@ pub type Conf {
   PreserveFiles
   /// other modules to be imported for use in the generated test files
   ExtraImports(filepath: String, modules: List(String))
+  /// create doc tests from markdown file
+  Markdown(filepath: List(String))
 }

@@ -142,6 +142,18 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
         })
         as "failed to read source files"
 
+      let assert Ok(Nil) =
+        list.try_each(cfg.markdown_files, fn(file) {
+          util.verbose_log(cfg.verbose, "creating doc tests for: " <> file)
+
+          let imports =
+            dict.get(cfg.extra_imports, file)
+            |> result.unwrap([])
+
+          util.create_tests_for_markdown_file(file, imports)
+        })
+        as "failed to read source files"
+
       util.verbose_log(cfg.verbose, "compiling doc tests")
 
       let args = case platform.runtime() {
@@ -152,15 +164,15 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
         _ -> panic as "testament: invalid runtime or target"
       }
 
+      let args = list.append(["test", "--target"], args)
+
       util.verbose_log(
         cfg.verbose,
-        "running '"
-          <> string.join(["gleam", "test", "--target", ..args], " ")
-          <> "'",
+        "running '" <> string.join(["gleam", ..args], " ") <> "'",
       )
 
       let res =
-        shellout.command("gleam", ["test", "--target", ..args], ".", [
+        shellout.command("gleam", args, ".", [
           shellout.LetBeStderr,
           shellout.LetBeStdout,
           shellout.SetEnvironment([#(docs_env_var, "1")]),
@@ -170,8 +182,6 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
         False -> {
           util.verbose_log(cfg.verbose, "deleting generated doc tests")
 
-          let assert Ok(Nil) = util.clean_doc_tests()
-            as "failed to clean doc test"
           let assert Ok(Nil) =
             simplifile.delete(filepath.join("test", "testament"))
             as "failed to clean doc test"

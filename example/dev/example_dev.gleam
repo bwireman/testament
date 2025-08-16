@@ -9,6 +9,11 @@ pub fn main() -> Nil {
   testament.test_main_with_opts(fn() { Nil }, [
     conf.PreserveFiles,
     conf.Verbose,
+    conf.Markdown([
+      "src/markdown_basic.md",
+      "src/markdown_imports.md",
+      "src/markdown_no_tests.md",
+    ]),
   ])
 
   let assert Ok(files) =
@@ -21,6 +26,8 @@ pub fn main() -> Nil {
       "test/testament/hello/dude_doc_test.gleam",
       "test/testament/hello/world_doc_test.gleam",
       "test/testament/hello/yo_doc_test.gleam",
+      "test/testament/markdown_basic_md_doc_test.gleam",
+      "test/testament/markdown_imports_md_doc_test.gleam",
     ]
 
   let assert Ok(Nil) = simplifile.delete("test/testament")
