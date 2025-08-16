@@ -5,6 +5,7 @@
 1. three
 
 ```gleam
+import gleam/int
 let x = 1 + 1
 assert x == 2
 ```

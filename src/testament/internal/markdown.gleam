@@ -28,7 +28,7 @@ pub fn parse_snippets(content: String) -> #(List(String), List(String)) {
     |> string.split("\n")
     |> list.fold(#([], ""), fn(acc, line) {
       case string.starts_with(line, "import") {
-        True -> pair.map_first(acc, list.append(_, [line]))
+        True -> pair.map_first(acc, list.prepend(_, line))
         _ -> pair.map_second(acc, fn(l) { string.concat([l, "\n", line]) })
       }
     })
