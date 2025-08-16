@@ -194,6 +194,7 @@ pub fn combine_conf_values_test() {
       verbose: False,
       preserve_files: False,
       extra_imports: dict.new(),
+      markdown_files: [],
     )
 
   assert util.combine_conf_values([conf.PreserveFiles])
@@ -202,6 +203,7 @@ pub fn combine_conf_values_test() {
       verbose: False,
       preserve_files: True,
       extra_imports: dict.new(),
+      markdown_files: [],
     )
 
   assert util.combine_conf_values([conf.Verbose])
@@ -210,6 +212,7 @@ pub fn combine_conf_values_test() {
       verbose: True,
       preserve_files: False,
       extra_imports: dict.new(),
+      markdown_files: [],
     )
 
   assert util.combine_conf_values([
@@ -221,6 +224,7 @@ pub fn combine_conf_values_test() {
       verbose: False,
       preserve_files: False,
       extra_imports: dict.new(),
+      markdown_files: [],
     )
 
   assert util.combine_conf_values([
@@ -236,5 +240,6 @@ pub fn combine_conf_values_test() {
         |> dict.insert("foo", ["import bar"])
         |> dict.insert("bar", ["import foo"])
         |> dict.insert("baz", ["import baz", "import foo", "import bar"]),
+      markdown_files: [],
     )
 }

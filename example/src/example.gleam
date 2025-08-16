@@ -5,6 +5,13 @@
 /// ```
 ///: let x = example.add(1, 2)
 ///: assert x == 3
+///:
+///: let y =
+///: example.add(1, 1)
+///: |> example.add(2)
+///: |> example.add(3)
+///:
+///: assert y == {x * 2} + 1
 /// ```
 pub fn add(a: Int, b: Int) -> Int {
   a + b
