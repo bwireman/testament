@@ -5,7 +5,9 @@ import gleam/list
 import gleam/string
 import gleeunit
 import glexer/token
+import simplifile
 import testament/conf
+import testament/internal/markdown
 import testament/internal/util
 
 pub fn main() -> Nil {
@@ -242,4 +244,14 @@ pub fn combine_conf_values_test() {
         |> dict.insert("baz", ["import baz", "import foo", "import bar"]),
       markdown_files: [],
     )
+}
+
+pub fn markdown_test() {
+  let assert Ok(code) = simplifile.read("test/markdown.md")
+
+  assert markdown.parse_snippets(code)
+    == #(["import gleam/int"], [
+      "\nlet x = 1 + 1\nassert x == 2",
+      "\nassert int.add(1, 1) == 2",
+    ])
 }

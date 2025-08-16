@@ -17,6 +17,7 @@ const prefix = ":"
 pub fn get_test_file_name(file: String) -> String {
   file
   |> string.replace("src", "")
+  |> string.replace(".md", "_md.gleam")
   |> string.replace(".gleam", "_doc_test.gleam")
   |> filepath.join("testament", _)
   |> filepath.join("test", _)
@@ -154,8 +155,11 @@ pub fn create_tests_for_markdown_file(
   file: String,
   extra_imports: List(String),
 ) -> Result(Nil, simplifile.FileError) {
-  let tests = markdown.parse_snippets(file)
-  do_create_tests(file, extra_imports, tests)
+  let assert Ok(file_content) = simplifile.read(file)
+    as { "could not read file '" <> file <> "'" }
+
+  let #(imports, tests) = markdown.parse_snippets(file_content)
+  do_create_tests(file, list.append(imports, extra_imports), tests)
 }
 
 fn do_create_tests(filepath: String, imports: List(String), tests: List(String)) {
