@@ -6,7 +6,7 @@ Doc tests for gleam! ✨
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/testament/)
 
 ```sh
-gleam add --dev testament@1
+gleam add --dev testament
 ```
 
 ## Usage:

@@ -5,6 +5,11 @@ repository = { type = "github", user = "bwireman", repo = "testament" }
 description = "Doc tests for Gleam ✨!"
 gleam = ">= 1.11.0"
 
+[documentation]
+pages = [
+  { title = "Writing Tests", path = "writing_tests.html", source = "docs/writing_tests.md" },
+]
+
 [javascript.deno]
 allow_read = ["test", "src", "gleam.toml", "birdie_snapshots"]
 allow_write = ["birdie_snapshots"]
