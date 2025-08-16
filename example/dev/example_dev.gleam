@@ -9,7 +9,11 @@ pub fn main() -> Nil {
   testament.test_main_with_opts(fn() { Nil }, [
     conf.PreserveFiles,
     conf.Verbose,
-    conf.Markdown(["src/markdown_basic.md", "src/markdown_imports.md"]),
+    conf.Markdown([
+      "src/markdown_basic.md",
+      "src/markdown_imports.md",
+      "src/markdown_no_tests.md",
+    ]),
   ])
 
   let assert Ok(files) =

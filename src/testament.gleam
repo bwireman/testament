@@ -182,8 +182,6 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
         False -> {
           util.verbose_log(cfg.verbose, "deleting generated doc tests")
 
-          let assert Ok(Nil) = util.clean_doc_tests()
-            as "failed to clean doc test"
           let assert Ok(Nil) =
             simplifile.delete(filepath.join("test", "testament"))
             as "failed to clean doc test"
