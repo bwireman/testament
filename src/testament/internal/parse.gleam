@@ -13,9 +13,10 @@ pub type Import =
 pub type CodeBlock =
   String
 
-pub fn parse_markdown_snippets(
-  content: String,
-) -> #(List(Import), List(CodeBlock)) {
+pub type ImportsAndCode =
+  #(List(Import), List(CodeBlock))
+
+pub fn parse_markdown_snippets(content: String) -> ImportsAndCode {
   let assert Ok(rg) =
     regexp.compile(
       "^````?gleam(?:\\s*(\\w+))?([\\s\\S]*?)^````?$",
@@ -48,9 +49,7 @@ pub fn parse_markdown_snippets(
   |> pair.map_first(list.unique)
 }
 
-pub fn get_doc_tests_imports_and_code(
-  code: String,
-) -> #(List(Import), List(CodeBlock)) {
+pub fn get_doc_tests_imports_and_code(code: String) -> ImportsAndCode {
   let prefix_len = string.length(prefix)
 
   code
