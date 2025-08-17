@@ -267,8 +267,8 @@ pub fn markdown_parse_snippets_test() {
 
   assert parse.parse_markdown_snippets(code)
     == #(["import gleam/int"], [
-      "let x = 1 + 1\nassert x == 2",
       "assert int.add(1, 1) == 2",
+      "let x = 1 + 1\nassert x == 2",
     ])
 
   snapshot_markdown_doc_test(

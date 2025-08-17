@@ -41,12 +41,7 @@ pub fn parse_markdown_snippets(content: String) -> ImportsAndCode {
     |> list.fold(#([], []), split_imports_and_code)
     |> pair.map_second(string.join(_, "\n"))
   })
-  |> list.fold(#([], []), fn(acc, block) {
-    acc
-    |> pair.map_first(list.append(_, pair.first(block)))
-    |> pair.map_second(list.append(_, [pair.second(block)]))
-  })
-  |> pair.map_first(list.unique)
+  |> prep_imports()
 }
 
 pub fn get_doc_tests_imports_and_code(code: String) -> ImportsAndCode {
@@ -69,12 +64,7 @@ pub fn get_doc_tests_imports_and_code(code: String) -> ImportsAndCode {
     |> list.fold(#([], []), split_imports_and_code)
     |> pair.map_second(string.join(_, "\n"))
   })
-  |> list.fold(#([], []), fn(acc, block) {
-    acc
-    |> pair.map_first(list.append(_, pair.first(block)))
-    |> pair.map_second(list.prepend(_, pair.second(block)))
-  })
-  |> pair.map_first(list.unique)
+  |> prep_imports()
 }
 
 pub fn collect_test_lines(tokens: List(token.Token)) -> List(List(token.Token)) {
@@ -111,9 +101,9 @@ pub type DocState {
 }
 
 pub fn split_imports_and_code(
-  code: #(List(String), List(String)),
+  code: ImportsAndCode,
   line: String,
-) -> #(List(String), List(String)) {
+) -> ImportsAndCode {
   case string.starts_with(line, "import") {
     True -> pair.map_first(code, list.prepend(_, line))
     False -> pair.map_second(code, list.append(_, [line]))
@@ -139,4 +129,16 @@ pub fn fold_doc_state(state: DocState, line: token.Token) {
 
     _, _ -> state
   }
+}
+
+pub fn prep_imports(
+  blocks: List(#(List(Import), CodeBlock)),
+) -> #(List(Import), List(CodeBlock)) {
+  blocks
+  |> list.fold(#([], []), fn(acc, block) {
+    acc
+    |> pair.map_first(list.append(_, pair.first(block)))
+    |> pair.map_second(list.prepend(_, pair.second(block)))
+  })
+  |> pair.map_first(list.unique)
 }
