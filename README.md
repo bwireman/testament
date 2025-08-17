@@ -11,10 +11,9 @@ gleam add --dev testament
 
 ## Usage:
 
-### Write some beautiful gleam code with Doc Comments 📒
+### Write some beautiful gleam code with Doc Comments 📒 (or Markdown!)
 
-(Note that all doc test lines need to be Doc Comments or Module comments and
-start with `:`)
+More info on [Writing Tests 🔗](docs/writing_tests.md)
 
 ````gleam
 ////Example Module doc test
