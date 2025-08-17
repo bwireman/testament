@@ -188,7 +188,13 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
 
           Nil
         }
-        _ -> Nil
+        _ -> {
+          let assert Ok(_) =
+            shellout.command("gleam", ["format", "test/testament"], ".", [])
+            as "failed to format generated tests"
+
+          Nil
+        }
       }
 
       case res {
