@@ -103,7 +103,8 @@ pub fn test_main(run_tests: fn() -> Nil) -> Nil {
 }
 
 ///Add testament to your test's main function and you're good to go!
-///You can use gleeunit or any other testing framework
+///You can use gleeunit or any other testing framework.
+///- Config options [here](https://hexdocs.pm/testament/testament/conf.html)
 /// ```gleam
 /// import gleeunit
 /// import testament
