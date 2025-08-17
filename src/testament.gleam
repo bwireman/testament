@@ -137,7 +137,6 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
           let imports =
             dict.get(cfg.extra_imports, file)
             |> result.unwrap([])
-            |> list.prepend(util.import_from_file_name(file))
 
           util.create_tests_for_file(file, imports)
         })

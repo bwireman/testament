@@ -38,18 +38,23 @@ pub fn import_from_file_name(file: String) -> String {
 
 pub fn create_tests_for_file(
   file: String,
-  extra_imports: List(String),
+  extra_imports: List(parse.Import),
 ) -> Result(Nil, simplifile.FileError) {
   let assert Ok(file_content) = simplifile.read(file)
     as { "could not read file '" <> file <> "'" }
 
   let #(imports, tests) = parse.get_doc_tests_imports_and_code(file_content)
-  do_create_tests(file, list.append(imports, extra_imports), tests)
+  let imports =
+    imports
+    |> list.append(extra_imports)
+    |> list.prepend(import_from_file_name(file))
+
+  do_create_tests(file, imports, tests)
 }
 
 pub fn create_tests_for_markdown_file(
   file: String,
-  extra_imports: List(String),
+  extra_imports: List(parse.Import),
 ) -> Result(Nil, simplifile.FileError) {
   let assert Ok(file_content) = simplifile.read(file)
     as { "could not read file '" <> file <> "'" }
@@ -58,7 +63,11 @@ pub fn create_tests_for_markdown_file(
   do_create_tests(file, list.append(imports, extra_imports), tests)
 }
 
-fn do_create_tests(filepath: String, imports: List(String), tests: List(String)) {
+fn do_create_tests(
+  filepath: String,
+  imports: List(parse.Import),
+  tests: List(parse.CodeBlock),
+) -> Result(Nil, simplifile.FileError) {
   case tests {
     [] -> Ok(Nil)
     _ -> {
@@ -138,7 +147,7 @@ pub fn combine_conf_values(opts: List(conf.Conf)) -> Config {
   )
 }
 
-pub fn verbose_log(log: Bool, msg: String) {
+pub fn verbose_log(log: Bool, msg: String) -> Nil {
   case log {
     True -> io.println("testament: " <> msg)
     False -> Nil

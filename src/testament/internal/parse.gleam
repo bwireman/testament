@@ -110,7 +110,7 @@ pub fn split_imports_and_code(
   }
 }
 
-pub fn fold_doc_state(state: DocState, line: token.Token) {
+pub fn fold_doc_state(state: DocState, line: token.Token) -> DocState {
   case state, line {
     DocState(False, lines, _), token.CommentDoc(":" <> _)
     | DocState(False, lines, _), token.CommentModule(":" <> _)
@@ -131,9 +131,7 @@ pub fn fold_doc_state(state: DocState, line: token.Token) {
   }
 }
 
-fn prep_imports(
-  blocks: List(#(List(Import), CodeBlock)),
-) -> #(List(Import), List(CodeBlock)) {
+fn prep_imports(blocks: List(#(List(Import), CodeBlock))) -> ImportsAndCode {
   blocks
   |> list.fold(#([], []), fn(acc, block) {
     acc
