@@ -67,7 +67,7 @@ pub fn get_doc_tests_imports_and_code(code: String) -> ImportsAndCode {
   |> prep_imports()
 }
 
-pub fn collect_test_lines(tokens: List(token.Token)) -> List(List(token.Token)) {
+fn collect_test_lines(tokens: List(token.Token)) -> List(List(token.Token)) {
   let state = list.fold(tokens, DocState(False, [], []), fold_doc_state)
 
   case state.lines {
@@ -131,7 +131,7 @@ pub fn fold_doc_state(state: DocState, line: token.Token) {
   }
 }
 
-pub fn prep_imports(
+fn prep_imports(
   blocks: List(#(List(Import), CodeBlock)),
 ) -> #(List(Import), List(CodeBlock)) {
   blocks
