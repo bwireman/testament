@@ -13,7 +13,9 @@ pub type Import =
 pub type CodeBlock =
   String
 
-pub fn parse_markdown_snippets(content: String) -> #(List(String), List(String)) {
+pub fn parse_markdown_snippets(
+  content: String,
+) -> #(List(Import), List(CodeBlock)) {
   let assert Ok(rg) =
     regexp.compile(
       "^````?gleam(?:\\s*(\\w+))?([\\s\\S]*?)^````?$",
@@ -35,12 +37,8 @@ pub fn parse_markdown_snippets(content: String) -> #(List(String), List(String))
     |> glexer.lex()
     |> glexer.to_source()
     |> string.split("\n")
-    |> list.fold(#([], ""), fn(acc, line) {
-      case string.starts_with(line, "import") {
-        True -> pair.map_first(acc, list.prepend(_, line))
-        _ -> pair.map_second(acc, fn(l) { string.concat([l, "\n", line]) })
-      }
-    })
+    |> list.fold(#([], []), split_imports_and_code)
+    |> pair.map_second(string.join(_, "\n"))
   })
   |> list.fold(#([], []), fn(acc, block) {
     acc

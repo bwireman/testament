@@ -21,6 +21,5 @@ import gleam/int
 ====================
 
 code:
-
 let x = 2
 assert x - 1 == 1
