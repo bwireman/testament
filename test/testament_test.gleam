@@ -7,7 +7,7 @@ import gleeunit
 import glexer/token
 import simplifile
 import testament/conf
-import testament/internal/markdown
+import testament/internal/parse
 import testament/internal/util
 
 pub fn main() -> Nil {
@@ -32,13 +32,13 @@ fn prep_snapshot(
 }
 
 fn snapshot_doc_test(title: String, src: String) {
-  let #(imports, code) = util.get_doc_tests_imports_and_code(src)
+  let #(imports, code) = parse.get_doc_tests_imports_and_code(src)
 
   prep_snapshot(title, src, imports, code)
 }
 
 fn snapshot_markdown_doc_test(title: String, src: String) {
-  let #(imports, code) = markdown.parse_snippets(src)
+  let #(imports, code) = parse.parse_markdown_snippets(src)
 
   prep_snapshot(title, src, imports, code)
 }
@@ -57,77 +57,77 @@ pub fn import_from_file_name_test() {
 }
 
 pub fn is_doc_test() {
-  assert util.is_doc(token.CommentDoc(""))
-  assert util.is_doc(token.CommentDoc(":"))
-  assert util.is_doc(token.CommentModule(""))
-  assert util.is_doc(token.CommentModule(":"))
-  assert !util.is_doc(token.CommentNormal(""))
-  assert !util.is_doc(token.CommentNormal(":"))
-  assert !util.is_doc(token.UpperName(""))
-  assert !util.is_doc(token.UpperName(":"))
+  assert parse.is_doc(token.CommentDoc(""))
+  assert parse.is_doc(token.CommentDoc(":"))
+  assert parse.is_doc(token.CommentModule(""))
+  assert parse.is_doc(token.CommentModule(":"))
+  assert !parse.is_doc(token.CommentNormal(""))
+  assert !parse.is_doc(token.CommentNormal(":"))
+  assert !parse.is_doc(token.UpperName(""))
+  assert !parse.is_doc(token.UpperName(":"))
 }
 
 pub fn is_doctest_line_test() {
-  assert util.is_doctest_line(token.CommentDoc(":"))
-  assert !util.is_doctest_line(token.CommentDoc(""))
-  assert util.is_doctest_line(token.CommentModule(":"))
-  assert !util.is_doctest_line(token.CommentModule(""))
-  assert !util.is_doctest_line(token.CommentNormal(":"))
-  assert !util.is_doctest_line(token.CommentNormal(""))
-  assert !util.is_doctest_line(token.UpperName(":"))
-  assert !util.is_doctest_line(token.UpperName(""))
+  assert parse.is_doctest_line(token.CommentDoc(":"))
+  assert !parse.is_doctest_line(token.CommentDoc(""))
+  assert parse.is_doctest_line(token.CommentModule(":"))
+  assert !parse.is_doctest_line(token.CommentModule(""))
+  assert !parse.is_doctest_line(token.CommentNormal(":"))
+  assert !parse.is_doctest_line(token.CommentNormal(""))
+  assert !parse.is_doctest_line(token.UpperName(":"))
+  assert !parse.is_doctest_line(token.UpperName(""))
 }
 
 pub fn fold_doc_state_test() {
-  assert util.DocState(False, [], [])
-    |> util.fold_doc_state(token.String(": "))
-    == util.DocState(False, [], [])
+  assert parse.DocState(False, [], [])
+    |> parse.fold_doc_state(token.String(": "))
+    == parse.DocState(False, [], [])
 
-  assert util.DocState(False, [], [])
-    |> util.fold_doc_state(token.CommentDoc(": "))
-    == util.DocState(True, [token.CommentDoc(": ")], [])
+  assert parse.DocState(False, [], [])
+    |> parse.fold_doc_state(token.CommentDoc(": "))
+    == parse.DocState(True, [token.CommentDoc(": ")], [])
 
-  assert util.DocState(False, [], [])
-    |> util.fold_doc_state(token.CommentModule(": "))
-    == util.DocState(True, [token.CommentModule(": ")], [])
+  assert parse.DocState(False, [], [])
+    |> parse.fold_doc_state(token.CommentModule(": "))
+    == parse.DocState(True, [token.CommentModule(": ")], [])
 
-  assert util.DocState(True, [], [])
-    |> util.fold_doc_state(token.CommentDoc(": "))
-    == util.DocState(True, [token.CommentDoc(": ")], [])
+  assert parse.DocState(True, [], [])
+    |> parse.fold_doc_state(token.CommentDoc(": "))
+    == parse.DocState(True, [token.CommentDoc(": ")], [])
 
-  assert util.DocState(True, [], [])
-    |> util.fold_doc_state(token.CommentModule(": "))
-    == util.DocState(True, [token.CommentModule(": ")], [])
+  assert parse.DocState(True, [], [])
+    |> parse.fold_doc_state(token.CommentModule(": "))
+    == parse.DocState(True, [token.CommentModule(": ")], [])
 
-  assert util.DocState(True, [token.CommentModule(": let x = 2 + 2")], [])
-    |> util.fold_doc_state(token.CommentModule(": assert x == 4"))
-    |> util.fold_doc_state(token.CommentModule("pub fn x"))
-    == util.DocState(False, [], [
+  assert parse.DocState(True, [token.CommentModule(": let x = 2 + 2")], [])
+    |> parse.fold_doc_state(token.CommentModule(": assert x == 4"))
+    |> parse.fold_doc_state(token.CommentModule("pub fn x"))
+    == parse.DocState(False, [], [
       [
         token.CommentModule(": let x = 2 + 2"),
         token.CommentModule(": assert x == 4"),
       ],
     ])
 
-  assert util.DocState(True, [], [])
-    |> util.fold_doc_state(token.CommentDoc(" "))
-    == util.DocState(False, [], [[]])
+  assert parse.DocState(True, [], [])
+    |> parse.fold_doc_state(token.CommentDoc(" "))
+    == parse.DocState(False, [], [[]])
 
-  assert util.DocState(True, [], [])
-    |> util.fold_doc_state(token.CommentModule(" "))
-    == util.DocState(False, [], [[]])
+  assert parse.DocState(True, [], [])
+    |> parse.fold_doc_state(token.CommentModule(" "))
+    == parse.DocState(False, [], [[]])
 }
 
 pub fn split_imports_and_code_test() {
   let x = #([], [])
 
-  assert util.split_imports_and_code(x, "import foo") == #(["import foo"], [])
-  assert util.split_imports_and_code(x, "let x = 1") == #([], ["let x = 1"])
+  assert parse.split_imports_and_code(x, "import foo") == #(["import foo"], [])
+  assert parse.split_imports_and_code(x, "let x = 1") == #([], ["let x = 1"])
 }
 
 pub fn get_doc_tests_imports_and_code_test() {
-  assert util.get_doc_tests_imports_and_code("") == #([], [])
-  assert util.get_doc_tests_imports_and_code("   ") == #([], [])
+  assert parse.get_doc_tests_imports_and_code("") == #([], [])
+  assert parse.get_doc_tests_imports_and_code("   ") == #([], [])
   snapshot_doc_test(
     "add",
     "///```
@@ -265,7 +265,7 @@ pub fn combine_conf_values_test() {
 pub fn markdown_parse_snippets_test() {
   let assert Ok(code) = simplifile.read("test/markdown.md")
 
-  assert markdown.parse_snippets(code)
+  assert parse.parse_markdown_snippets(code)
     == #(["import gleam/int"], [
       "\nlet x = 1 + 1\nassert x == 2",
       "\nassert int.add(1, 1) == 2",
