@@ -56,3 +56,23 @@ pub fn add(a: Int, b: Int) -> Int {
   a - b
 }
 ```
+
+### Tests from Markdown
+
+- can be configured in
+  [config](https://hexdocs.pm/testament/testament/conf.html)
+
+````markdown
+# Example Markdown doc with embedded tests
+
+## can subtract any numbers (ints!)!!
+
+```gleam
+import example
+let x = example.sub(1, 2)
+assert x == -1
+assert example.sub(2, 1) == 1
+```
+
+Thats infinite numbers! 😵‍💫
+````
