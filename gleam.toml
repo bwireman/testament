@@ -11,7 +11,7 @@ pages = [
 ]
 
 [javascript.deno]
-allow_read = ["test", "src", "gleam.toml", "birdie_snapshots"]
+allow_read = ["test", "src", "gleam.toml", "birdie_snapshots", "build"]
 allow_write = ["birdie_snapshots"]
 
 [dependencies]

@@ -3,16 +3,11 @@ import gleam/dict
 import gleam/int
 import gleam/io
 import gleam/list
-import gleam/pair
 import gleam/result
 import gleam/string
-import glexer
-import glexer/token
 import simplifile
 import testament/conf
-import testament/internal/markdown
-
-const prefix = ":"
+import testament/internal/parse
 
 pub fn get_test_file_name(file: String) -> String {
   file
@@ -21,106 +16,6 @@ pub fn get_test_file_name(file: String) -> String {
   |> string.replace(".gleam", "_doc_test.gleam")
   |> filepath.join("testament", _)
   |> filepath.join("test", _)
-}
-
-pub type DocState {
-  DocState(
-    in: Bool,
-    lines: List(token.Token),
-    test_bodies: List(List(token.Token)),
-  )
-}
-
-pub type Import =
-  String
-
-pub type CodeBlock =
-  String
-
-pub fn get_doc_tests_imports_and_code(
-  code: String,
-) -> #(List(Import), List(CodeBlock)) {
-  let prefix_len = string.length(prefix)
-
-  code
-  |> glexer.new()
-  |> glexer.discard_whitespace()
-  |> glexer.lex()
-  |> list.map(pair.first)
-  |> list.filter(is_doc)
-  |> collect_test_lines()
-  |> list.map(fn(tokens) {
-    tokens
-    |> list.filter(is_doctest_line)
-    |> list.map(token.to_source)
-    |> list.map(string.crop(_, prefix))
-    |> list.map(string.drop_start(_, prefix_len))
-    |> list.map(string.trim)
-    |> list.fold(#([], []), split_imports_and_code)
-    |> pair.map_second(string.join(_, "\n"))
-  })
-  |> list.fold(#([], []), fn(acc, block) {
-    acc
-    |> pair.map_first(list.append(_, pair.first(block)))
-    |> pair.map_second(list.prepend(_, pair.second(block)))
-  })
-  |> pair.map_first(list.unique)
-}
-
-pub fn collect_test_lines(tokens: List(token.Token)) -> List(List(token.Token)) {
-  let state = list.fold(tokens, DocState(False, [], []), fold_doc_state)
-
-  case state.lines {
-    [] -> state.test_bodies
-    _ -> list.prepend(state.test_bodies, list.reverse(state.lines))
-  }
-}
-
-pub fn fold_doc_state(state: DocState, line: token.Token) {
-  case state, line {
-    DocState(False, lines, _), token.CommentDoc(":" <> _)
-    | DocState(False, lines, _), token.CommentModule(":" <> _)
-    -> DocState(..state, in: True, lines: [line, ..lines])
-
-    DocState(True, lines, _), token.CommentDoc(":" <> _)
-    | DocState(True, lines, _), token.CommentModule(":" <> _)
-    -> DocState(..state, lines: [line, ..lines])
-
-    DocState(True, lines, bodies), _ ->
-      DocState(
-        in: False,
-        lines: [],
-        test_bodies: list.prepend(bodies, list.reverse(lines)),
-      )
-
-    _, _ -> state
-  }
-}
-
-pub fn is_doc(line: token.Token) -> Bool {
-  case line {
-    token.CommentDoc(_) -> True
-    token.CommentModule(_) -> True
-    _ -> False
-  }
-}
-
-pub fn is_doctest_line(line: token.Token) -> Bool {
-  case line {
-    token.CommentDoc(":" <> _) -> True
-    token.CommentModule(":" <> _) -> True
-    _ -> False
-  }
-}
-
-pub fn split_imports_and_code(
-  code: #(List(String), List(String)),
-  line: String,
-) -> #(List(String), List(String)) {
-  case string.starts_with(line, "import") {
-    True -> pair.map_first(code, list.prepend(_, line))
-    False -> pair.map_second(code, list.append(_, [line]))
-  }
 }
 
 pub fn clean_doc_tests() -> Result(Nil, simplifile.FileError) {
@@ -143,27 +38,36 @@ pub fn import_from_file_name(file: String) -> String {
 
 pub fn create_tests_for_file(
   file: String,
-  extra_imports: List(String),
+  extra_imports: List(parse.Import),
 ) -> Result(Nil, simplifile.FileError) {
   let assert Ok(file_content) = simplifile.read(file)
     as { "could not read file '" <> file <> "'" }
 
-  let #(imports, tests) = get_doc_tests_imports_and_code(file_content)
-  do_create_tests(file, list.append(imports, extra_imports), tests)
+  let #(imports, tests) = parse.get_doc_tests_imports_and_code(file_content)
+  let imports =
+    imports
+    |> list.append(extra_imports)
+    |> list.prepend(import_from_file_name(file))
+
+  do_create_tests(file, imports, tests)
 }
 
 pub fn create_tests_for_markdown_file(
   file: String,
-  extra_imports: List(String),
+  extra_imports: List(parse.Import),
 ) -> Result(Nil, simplifile.FileError) {
   let assert Ok(file_content) = simplifile.read(file)
     as { "could not read file '" <> file <> "'" }
 
-  let #(imports, tests) = markdown.parse_snippets(file_content)
+  let #(imports, tests) = parse.parse_markdown_snippets(file_content)
   do_create_tests(file, list.append(imports, extra_imports), tests)
 }
 
-fn do_create_tests(filepath: String, imports: List(String), tests: List(String)) {
+fn do_create_tests(
+  filepath: String,
+  imports: List(parse.Import),
+  tests: List(parse.CodeBlock),
+) -> Result(Nil, simplifile.FileError) {
   case tests {
     [] -> Ok(Nil)
     _ -> {
@@ -243,7 +147,7 @@ pub fn combine_conf_values(opts: List(conf.Conf)) -> Config {
   )
 }
 
-pub fn verbose_log(log: Bool, msg: String) {
+pub fn verbose_log(log: Bool, msg: String) -> Nil {
   case log {
     True -> io.println("testament: " <> msg)
     False -> Nil

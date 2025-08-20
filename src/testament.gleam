@@ -103,7 +103,8 @@ pub fn test_main(run_tests: fn() -> Nil) -> Nil {
 }
 
 ///Add testament to your test's main function and you're good to go!
-///You can use gleeunit or any other testing framework
+///You can use gleeunit or any other testing framework.
+///- Config options [here](https://hexdocs.pm/testament/testament/conf.html)
 /// ```gleam
 /// import gleeunit
 /// import testament
@@ -136,7 +137,6 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
           let imports =
             dict.get(cfg.extra_imports, file)
             |> result.unwrap([])
-            |> list.prepend(util.import_from_file_name(file))
 
           util.create_tests_for_file(file, imports)
         })
@@ -188,7 +188,13 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
 
           Nil
         }
-        _ -> Nil
+        _ -> {
+          let assert Ok(_) =
+            shellout.command("gleam", ["format", "test/testament"], ".", [])
+            as "failed to format generated tests"
+
+          Nil
+        }
       }
 
       case res {
