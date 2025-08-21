@@ -13,7 +13,7 @@ gleam add --dev testament
 
 ### Write some beautiful gleam code with Doc Comments 📒 (or Markdown!)
 
-More info on [Writing Tests 🔗](docs/writing_tests.md)
+More info on [Writing Tests 🔗](https://hexdocs.pm/testament/writing_tests.html)
 
 ````gleam
 ////Example Module doc test
