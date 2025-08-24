@@ -8,6 +8,7 @@ import gleam/string
 import simplifile
 import testament/conf
 import testament/internal/parse
+import testament/internal/stream
 
 pub fn get_test_file_name(file: String) -> String {
   file
@@ -21,7 +22,9 @@ pub fn get_test_file_name(file: String) -> String {
 pub fn clean_doc_tests() -> Result(Nil, simplifile.FileError) {
   use files <- result.try(simplifile.get_files("src"))
   files
-  |> list.map(get_test_file_name)
+  |> stream.new()
+  |> stream.map(get_test_file_name)
+  |> stream.to_list()
   |> simplifile.delete_all()
 }
 
@@ -130,8 +133,10 @@ pub fn combine_conf_values(opts: List(conf.Conf)) -> Config {
               cfg.extra_imports,
               file,
               imports
-                |> list.map(string.trim)
-                |> list.map(string.append("import ", _)),
+                |> stream.new()
+                |> stream.map(string.trim)
+                |> stream.map(string.append("import ", _))
+                |> stream.to_list(),
             ),
           )
         conf.IgnoreFiles(files) ->

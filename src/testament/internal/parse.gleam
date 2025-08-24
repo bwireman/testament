@@ -4,6 +4,7 @@ import gleam/regexp
 import gleam/string
 import glexer
 import glexer/token
+import testament/internal/stream
 
 const prefix = ":"
 
@@ -26,7 +27,8 @@ pub fn parse_markdown_snippets(content: String) -> ImportsAndCode {
 
   rg
   |> regexp.scan(content)
-  |> list.map(fn(match) {
+  |> stream.new()
+  |> stream.map(fn(match) {
     match.content
     |> string.replace("````gleam", "")
     |> string.replace("```gleam", "")
@@ -41,6 +43,7 @@ pub fn parse_markdown_snippets(content: String) -> ImportsAndCode {
     |> list.fold(#([], []), split_imports_and_code)
     |> pair.map_second(string.join(_, "\n"))
   })
+  |> stream.to_list()
   |> prep_imports()
 }
 
@@ -51,19 +54,25 @@ pub fn get_doc_tests_imports_and_code(code: String) -> ImportsAndCode {
   |> glexer.new()
   |> glexer.discard_whitespace()
   |> glexer.lex()
-  |> list.map(pair.first)
-  |> list.filter(is_doc)
+  |> stream.new()
+  |> stream.map(pair.first)
+  |> stream.filter(is_doc)
+  |> stream.to_list()
   |> collect_test_lines()
-  |> list.map(fn(tokens) {
+  |> stream.new()
+  |> stream.map(fn(tokens) {
     tokens
-    |> list.filter(is_doctest_line)
-    |> list.map(token.to_source)
-    |> list.map(string.crop(_, prefix))
-    |> list.map(string.drop_start(_, prefix_len))
-    |> list.map(string.trim)
+    |> stream.new()
+    |> stream.filter(is_doctest_line)
+    |> stream.map(token.to_source)
+    |> stream.map(string.crop(_, prefix))
+    |> stream.map(string.drop_start(_, prefix_len))
+    |> stream.map(string.trim)
+    |> stream.to_list()
     |> list.fold(#([], []), split_imports_and_code)
     |> pair.map_second(string.join(_, "\n"))
   })
+  |> stream.to_list()
   |> prep_imports()
 }
 
