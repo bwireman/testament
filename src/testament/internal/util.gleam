@@ -7,6 +7,7 @@ import gleam/result
 import gleam/string
 import simplifile
 import testament/conf
+import testament/internal/constants
 import testament/internal/parse
 import testament/internal/stream
 
@@ -77,7 +78,7 @@ fn do_create_tests(
       let imports =
         imports
         |> list.unique()
-        |> string.join("\n")
+        |> string.join(constants.newline)
 
       let test_file_name = get_test_file_name(filepath)
 
@@ -89,12 +90,13 @@ fn do_create_tests(
         |> simplifile.create_directory_all()
         as "failed to create test doc directory"
 
-      let assert Ok(Nil) = simplifile.append(test_file_name, imports <> "\n")
+      let assert Ok(Nil) =
+        simplifile.append(test_file_name, imports <> constants.newline)
 
       list.index_map(tests, fn(code, index) {
         string.join(
           ["\npub fn doc" <> int.to_string(index) <> "_test() {", code, "}\n"],
-          "\n",
+          constants.newline,
         )
         |> simplifile.append(test_file_name, _)
       })

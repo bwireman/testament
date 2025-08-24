@@ -4,9 +4,8 @@ import gleam/regexp
 import gleam/string
 import glexer
 import glexer/token
+import testament/internal/constants
 import testament/internal/stream
-
-const prefix = ":"
 
 pub type Import =
   String
@@ -39,16 +38,16 @@ pub fn parse_markdown_snippets(content: String) -> ImportsAndCode {
     |> glexer.discard_comments()
     |> glexer.lex()
     |> glexer.to_source()
-    |> string.split("\n")
+    |> string.split(constants.newline)
     |> list.fold(#([], []), split_imports_and_code)
-    |> pair.map_second(string.join(_, "\n"))
+    |> pair.map_second(string.join(_, constants.newline))
   })
   |> stream.to_list()
   |> prep_imports()
 }
 
 pub fn get_doc_tests_imports_and_code(code: String) -> ImportsAndCode {
-  let prefix_len = string.length(prefix)
+  let prefix_len = string.length(constants.prefix)
 
   code
   |> glexer.new()
@@ -65,12 +64,12 @@ pub fn get_doc_tests_imports_and_code(code: String) -> ImportsAndCode {
     |> stream.new()
     |> stream.filter(is_doctest_line)
     |> stream.map(token.to_source)
-    |> stream.map(string.crop(_, prefix))
+    |> stream.map(string.crop(_, constants.prefix))
     |> stream.map(string.drop_start(_, prefix_len))
     |> stream.map(string.trim)
     |> stream.to_list()
     |> list.fold(#([], []), split_imports_and_code)
-    |> pair.map_second(string.join(_, "\n"))
+    |> pair.map_second(string.join(_, constants.newline))
   })
   |> stream.to_list()
   |> prep_imports()
