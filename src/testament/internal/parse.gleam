@@ -19,7 +19,7 @@ pub type ImportsAndCode =
 pub fn parse_markdown_snippets(content: String) -> ImportsAndCode {
   let assert Ok(rg) =
     regexp.compile(
-      "^````?gleam(?:\\s*(\\w+))?([\\s\\S]*?)^````?$",
+      "^```gleam(?:\\s*(\\w+))?([\\s\\S]*?)^```$",
       regexp.Options(False, True),
     )
     as { "failed to compile markdown regex" }
@@ -29,9 +29,7 @@ pub fn parse_markdown_snippets(content: String) -> ImportsAndCode {
   |> stream.new()
   |> stream.map(fn(match) {
     match.content
-    |> string.replace("````gleam", "")
     |> string.replace("```gleam", "")
-    |> string.replace("````", "")
     |> string.replace("```", "")
     |> string.trim()
     |> glexer.new()

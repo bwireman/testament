@@ -221,17 +221,6 @@ assert x - 1 == 1
   )
 
   snapshot_markdown_doc_test(
-    "basic 4 ticks",
-    "
-# example
-````gleam
-let x = 2
-assert x - 1 == 1
-````
-",
-  )
-
-  snapshot_markdown_doc_test(
     "basic import",
     "
 # example
