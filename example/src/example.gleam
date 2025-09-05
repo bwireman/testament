@@ -24,3 +24,14 @@ pub fn add(a: Int, b: Int) -> Int {
 pub fn sub(a: Int, b: Int) -> Int {
   a - b
 }
+
+pub type SuperInt {
+  SuperInt(v: Int)
+}
+
+///: let x = example.super_add(SuperInt(1), SuperInt(2))
+///: assert x == SuperInt(3)
+///: assert example.super_add(SuperInt(2), SuperInt(1)) == SuperInt(3)
+pub fn super_add(a: SuperInt, b: SuperInt) -> SuperInt {
+  SuperInt(a.v + b.v)
+}

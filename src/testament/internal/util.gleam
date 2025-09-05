@@ -3,6 +3,7 @@ import gleam/dict
 import gleam/int
 import gleam/io
 import gleam/list
+import gleam/pair
 import gleam/result
 import gleam/string
 import simplifile
@@ -37,7 +38,7 @@ pub fn import_from_file_name(file: String) -> String {
     |> list.rest()
     as { "could not construct file name for '" <> file <> "'" }
 
-  "import " <> list.fold(module, "", filepath.join)
+  list.fold(module, "", filepath.join)
 }
 
 pub fn create_tests_for_file(
@@ -48,10 +49,7 @@ pub fn create_tests_for_file(
     as { "could not read file '" <> file <> "'" }
 
   let #(imports, tests) = parse.get_doc_tests_imports_and_code(file_content)
-  let imports =
-    imports
-    |> list.append(extra_imports)
-    |> list.prepend(import_from_file_name(file))
+  let imports = list.append(imports, extra_imports)
 
   do_create_tests(file, imports, tests)
 }
@@ -111,7 +109,7 @@ pub type Config {
     ignore_files: List(String),
     verbose: Bool,
     preserve_files: Bool,
-    extra_imports: dict.Dict(String, List(String)),
+    extra_imports: dict.Dict(String, List(conf.Import)),
     markdown_files: List(String),
   )
 }
@@ -128,19 +126,12 @@ pub fn combine_conf_values(opts: List(conf.Conf)) -> Config {
     ),
     fn(cfg, opt) {
       case opt {
-        conf.ExtraImports(file, imports) ->
+        conf.ExtraImports(file, imports) -> {
           Config(
             ..cfg,
-            extra_imports: dict.insert(
-              cfg.extra_imports,
-              file,
-              imports
-                |> stream.new()
-                |> stream.map(string.trim)
-                |> stream.map(string.append("import ", _))
-                |> stream.to_list(),
-            ),
+            extra_imports: dict.insert(cfg.extra_imports, file, imports),
           )
+        }
         conf.IgnoreFiles(files) ->
           Config(..cfg, ignore_files: list.append(cfg.ignore_files, files))
         conf.PreserveFiles -> Config(..cfg, preserve_files: True)
@@ -159,4 +150,25 @@ pub fn verbose_log(log: Bool, msg: String) -> Nil {
     True -> io.println("testament: " <> msg)
     False -> Nil
   }
+}
+
+pub fn combine_unqualified(imports: List(conf.Import)) -> List(String) {
+  list.group(imports, fn(i) { i.module })
+  |> dict.to_list()
+  |> list.fold([], fn(acc, i) {
+    list.prepend(
+      acc,
+      conf.Import(
+        module: pair.first(i),
+        unqualified: list.flat_map(pair.second(i), fn(v) { v.unqualified }),
+      ),
+    )
+  })
+  |> list.map(fn(i) {
+    case i {
+      conf.Import(module, []) -> "import " <> module
+      conf.Import(module, unqualified) ->
+        "import " <> module <> ".{" <> string.join(unqualified, ", ") <> "}"
+    }
+  })
 }

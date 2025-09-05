@@ -9,6 +9,9 @@ pub fn main() -> Nil {
   testament.test_main_with_opts(fn() { Nil }, [
     conf.PreserveFiles,
     conf.Verbose,
+    conf.ExtraImports("src/example.gleam", [
+      conf.Import("example", ["SuperInt"]),
+    ]),
     conf.Markdown([
       "src/markdown_basic.md",
       "src/markdown_imports.md",

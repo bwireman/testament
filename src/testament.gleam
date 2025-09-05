@@ -79,6 +79,7 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
           string.ends_with(f, ".gleam") && !list.contains(cfg.ignore_files, f)
         })
 
+      // files
       let assert Ok(Nil) =
         list.try_each(files, fn(file) {
           util.verbose_log(cfg.verbose, "creating doc tests for: " <> file)
@@ -86,11 +87,14 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
           let imports =
             dict.get(cfg.extra_imports, file)
             |> result.unwrap([])
+            |> list.prepend(conf.Import(util.import_from_file_name(file), []))
+            |> util.combine_unqualified()
 
           util.create_tests_for_file(file, imports)
         })
         as "failed to read source files"
 
+      // markdown
       let assert Ok(Nil) =
         list.try_each(cfg.markdown_files, fn(file) {
           util.verbose_log(cfg.verbose, "creating doc tests for: " <> file)
@@ -98,6 +102,7 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
           let imports =
             dict.get(cfg.extra_imports, file)
             |> result.unwrap([])
+            |> util.combine_unqualified()
 
           util.create_tests_for_markdown_file(file, imports)
         })

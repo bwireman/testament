@@ -10,9 +10,9 @@ pub fn get_test_file_name_test() {
 }
 
 pub fn import_from_file_name_test() {
-  assert util.import_from_file_name("src/x.gleam") == "import x"
+  assert util.import_from_file_name("src/x.gleam") == "x"
   assert util.import_from_file_name("src/foo/bar/example.gleam")
-    == "import foo/bar/example"
+    == "foo/bar/example"
 }
 
 pub fn combine_conf_values_test() {
@@ -56,18 +56,27 @@ pub fn combine_conf_values_test() {
     )
 
   assert util.combine_conf_values([
-      conf.ExtraImports("foo", ["bar"]),
-      conf.ExtraImports("bar", ["foo"]),
-      conf.ExtraImports("baz", ["baz", "foo", "bar"]),
+      conf.ExtraImports("foo.gleam", [conf.Import("foo", ["foo-import"])]),
+      conf.ExtraImports("bar.gleam", [conf.Import("foo", ["foo-import"])]),
+      conf.ExtraImports("baz.gleam", [
+        conf.Import("foo", ["foo-import"]),
+        conf.Import("bar", ["bar-import"]),
+        conf.Import("baz", ["baz-import"]),
+      ]),
     ])
     == util.Config(
       ignore_files: [],
       verbose: False,
       preserve_files: False,
-      extra_imports: dict.new()
-        |> dict.insert("foo", ["import bar"])
-        |> dict.insert("bar", ["import foo"])
-        |> dict.insert("baz", ["import baz", "import foo", "import bar"]),
+      extra_imports: dict.from_list([
+        #("bar.gleam", [conf.Import("foo", ["foo-import"])]),
+        #("baz.gleam", [
+          conf.Import("foo", ["foo-import"]),
+          conf.Import("bar", ["bar-import"]),
+          conf.Import("baz", ["baz-import"]),
+        ]),
+        #("foo.gleam", [conf.Import("foo", ["foo-import"])]),
+      ]),
       markdown_files: [],
     )
 }
