@@ -3,9 +3,9 @@ import gleam/dict
 import gleam/int
 import gleam/io
 import gleam/list
-import gleam/pair
 import gleam/result
 import gleam/string
+import gleam/string_tree
 import simplifile
 import testament/conf
 import testament/internal/constants
@@ -153,26 +153,35 @@ pub fn verbose_log(log: Bool, msg: String) -> Nil {
 }
 
 pub fn combine_unqualified(imports: List(conf.Import)) -> List(String) {
-  list.group(imports, fn(i) { i.module })
+  imports
+  |> list.group(fn(i) { i.module })
   |> dict.to_list()
   |> list.fold([], fn(acc, i) {
-    list.prepend(
-      acc,
-      conf.Import(
-        module: pair.first(i),
-        unqualified: list.flat_map(pair.second(i), fn(v) { v.unqualified }),
-      ),
-    )
+    let #(module, imports) = i
+
+    acc
+    |> list.prepend(conf.Import(
+      module: module,
+      unqualified: list.flat_map(imports, fn(v) { v.unqualified }),
+    ))
   })
   |> list.map(fn(i) {
+    let conf.Import(module, _) = i
+
+    let tree =
+      string_tree.new()
+      |> string_tree.append(constants.importline)
+      |> string_tree.append(" ")
+      |> string_tree.append(module)
+
     case i {
-      conf.Import(module, []) -> "import " <> module
-      conf.Import(module, unqualified) ->
-        "import "
-        <> module
-        <> ".{"
-        <> string.join(list.unique(unqualified), ", ")
-        <> "}"
+      conf.Import(_, []) -> string_tree.to_string(tree)
+      conf.Import(_, unqualified) ->
+        tree
+        |> string_tree.append(".{")
+        |> string_tree.append(string.join(list.unique(unqualified), ", "))
+        |> string_tree.append("}")
+        |> string_tree.to_string()
     }
   })
 }

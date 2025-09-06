@@ -4,6 +4,8 @@ pub const newline = "\n"
 
 pub const docs_env_var = "TESTAMENT_WITH_DOCS"
 
+pub const importline = "import"
+
 pub const js_args = ["javascript", "--runtime"]
 
 pub const help = "📖 Testament

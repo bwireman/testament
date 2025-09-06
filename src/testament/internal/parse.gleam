@@ -110,7 +110,7 @@ pub fn split_imports_and_code(
   code: ImportsAndCode,
   line: String,
 ) -> ImportsAndCode {
-  case string.starts_with(line, "import") {
+  case string.starts_with(line, constants.importline) {
     True -> pair.map_first(code, list.prepend(_, line))
     False -> pair.map_second(code, list.append(_, [line]))
   }
