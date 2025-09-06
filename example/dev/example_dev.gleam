@@ -14,6 +14,9 @@ pub fn main() -> Nil {
       conf.Import("gleam/option", ["None", "Some", "None"]),
       conf.Import("example", ["SuperInt", "SuperInt"]),
     ]),
+    conf.ExtraImports("src/markdown_imports.md", [
+      conf.Import("gleam/float", ["add"]),
+    ]),
     conf.Markdown([
       "src/markdown_basic.md",
       "src/markdown_imports.md",
