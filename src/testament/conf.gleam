@@ -18,6 +18,7 @@
 //// }
 //// ```
 
+/// Imports to be injected into generated test files
 pub type Import {
   Import(module: String, unqualified: List(String))
 }

@@ -1,6 +1,8 @@
 //// Example Module docs
 ////: assert example.add(1, 0) == example.sub(2, 1)
 
+import gleam/option
+
 ///other comment
 /// ```
 ///: let x = example.add(1, 2)
@@ -30,8 +32,12 @@ pub type SuperInt {
 }
 
 ///: let x = example.super_add(SuperInt(1), SuperInt(2))
-///: assert x == SuperInt(3)
-///: assert example.super_add(SuperInt(2), SuperInt(1)) == SuperInt(3)
-pub fn super_add(a: SuperInt, b: SuperInt) -> SuperInt {
-  SuperInt(a.v + b.v)
+///: assert x == Some(SuperInt(3))
+///: assert example.super_add(SuperInt(-10), SuperInt(1)) == None
+pub fn super_add(a: SuperInt, b: SuperInt) -> option.Option(SuperInt) {
+  let sum = a.v + b.v
+  case sum > 0 {
+    True -> option.Some(SuperInt(sum))
+    _ -> option.None
+  }
 }

@@ -11,6 +11,8 @@ pub fn main() -> Nil {
     conf.Verbose,
     conf.ExtraImports("src/example.gleam", [
       conf.Import("example", ["SuperInt"]),
+      conf.Import("gleam/option", ["None", "Some", "None"]),
+      conf.Import("example", ["SuperInt", "SuperInt"]),
     ]),
     conf.Markdown([
       "src/markdown_basic.md",

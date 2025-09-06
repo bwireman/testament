@@ -168,7 +168,11 @@ pub fn combine_unqualified(imports: List(conf.Import)) -> List(String) {
     case i {
       conf.Import(module, []) -> "import " <> module
       conf.Import(module, unqualified) ->
-        "import " <> module <> ".{" <> string.join(unqualified, ", ") <> "}"
+        "import "
+        <> module
+        <> ".{"
+        <> string.join(list.unique(unqualified), ", ")
+        <> "}"
     }
   })
 }
