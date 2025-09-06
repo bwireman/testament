@@ -57,4 +57,3 @@ go_over = { version = ">= 3.2.0 and < 4.0.0" }
 platform = { version = ">= 1.0.0 and < 2.0.0" }
 shellout = { version = ">= 1.7.0 and < 2.0.0" }
 simplifile = { version = ">= 2.3.0 and < 3.0.0" }
-splitter = { version = ">= 1.1.0 and < 2.0.0" }
