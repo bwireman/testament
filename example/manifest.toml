@@ -13,7 +13,7 @@ packages = [
   { name = "shellout", version = "1.7.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "shellout", source = "hex", outer_checksum = "1BDC03438FEB97A6AF3E396F4ABEB32BECF20DF2452EC9A8C0ACEB7BDDF70B14" },
   { name = "simplifile", version = "2.3.0", build_tools = ["gleam"], requirements = ["filepath", "gleam_stdlib"], otp_app = "simplifile", source = "hex", outer_checksum = "0A868DAC6063D9E983477981839810DC2E553285AB4588B87E3E9C96A7FB4CB4" },
   { name = "splitter", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "splitter", source = "hex", outer_checksum = "05564A381580395DCDEFF4F88A64B021E8DAFA6540AE99B4623962F52976AA9D" },
-  { name = "testament", version = "0.3.1", build_tools = ["gleam"], requirements = ["argv", "envoy", "filepath", "gleam_regexp", "gleam_stdlib", "glexer", "platform", "shellout", "simplifile"], source = "local", path = ".." },
+  { name = "testament", version = "0.4.0", build_tools = ["gleam"], requirements = ["argv", "envoy", "filepath", "gleam_regexp", "gleam_stdlib", "glexer", "platform", "shellout", "simplifile"], source = "local", path = ".." },
 ]
 
 [requirements]
