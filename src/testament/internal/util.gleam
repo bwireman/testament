@@ -5,9 +5,12 @@ import gleam/io
 import gleam/list
 import gleam/result
 import gleam/string
+import gleam/string_tree
 import simplifile
 import testament/conf
+import testament/internal/constants
 import testament/internal/parse
+import testament/internal/stream
 
 pub fn get_test_file_name(file: String) -> String {
   file
@@ -21,7 +24,9 @@ pub fn get_test_file_name(file: String) -> String {
 pub fn clean_doc_tests() -> Result(Nil, simplifile.FileError) {
   use files <- result.try(simplifile.get_files("src"))
   files
-  |> list.map(get_test_file_name)
+  |> stream.new()
+  |> stream.map(get_test_file_name)
+  |> stream.to_list()
   |> simplifile.delete_all()
 }
 
@@ -33,7 +38,7 @@ pub fn import_from_file_name(file: String) -> String {
     |> list.rest()
     as { "could not construct file name for '" <> file <> "'" }
 
-  "import " <> list.fold(module, "", filepath.join)
+  list.fold(module, "", filepath.join)
 }
 
 pub fn create_tests_for_file(
@@ -44,10 +49,7 @@ pub fn create_tests_for_file(
     as { "could not read file '" <> file <> "'" }
 
   let #(imports, tests) = parse.get_doc_tests_imports_and_code(file_content)
-  let imports =
-    imports
-    |> list.append(extra_imports)
-    |> list.prepend(import_from_file_name(file))
+  let imports = list.append(imports, extra_imports)
 
   do_create_tests(file, imports, tests)
 }
@@ -74,7 +76,7 @@ fn do_create_tests(
       let imports =
         imports
         |> list.unique()
-        |> string.join("\n")
+        |> string.join(constants.newline)
 
       let test_file_name = get_test_file_name(filepath)
 
@@ -86,12 +88,13 @@ fn do_create_tests(
         |> simplifile.create_directory_all()
         as "failed to create test doc directory"
 
-      let assert Ok(Nil) = simplifile.append(test_file_name, imports <> "\n")
+      let assert Ok(Nil) =
+        simplifile.append(test_file_name, imports <> constants.newline)
 
       list.index_map(tests, fn(code, index) {
         string.join(
           ["\npub fn doc" <> int.to_string(index) <> "_test() {", code, "}\n"],
-          "\n",
+          constants.newline,
         )
         |> simplifile.append(test_file_name, _)
       })
@@ -106,7 +109,7 @@ pub type Config {
     ignore_files: List(String),
     verbose: Bool,
     preserve_files: Bool,
-    extra_imports: dict.Dict(String, List(String)),
+    extra_imports: dict.Dict(String, List(conf.Import)),
     markdown_files: List(String),
   )
 }
@@ -123,17 +126,12 @@ pub fn combine_conf_values(opts: List(conf.Conf)) -> Config {
     ),
     fn(cfg, opt) {
       case opt {
-        conf.ExtraImports(file, imports) ->
+        conf.ExtraImports(file, imports) -> {
           Config(
             ..cfg,
-            extra_imports: dict.insert(
-              cfg.extra_imports,
-              file,
-              imports
-                |> list.map(string.trim)
-                |> list.map(string.append("import ", _)),
-            ),
+            extra_imports: dict.insert(cfg.extra_imports, file, imports),
           )
+        }
         conf.IgnoreFiles(files) ->
           Config(..cfg, ignore_files: list.append(cfg.ignore_files, files))
         conf.PreserveFiles -> Config(..cfg, preserve_files: True)
@@ -152,4 +150,38 @@ pub fn verbose_log(log: Bool, msg: String) -> Nil {
     True -> io.println("testament: " <> msg)
     False -> Nil
   }
+}
+
+pub fn combine_unqualified(imports: List(conf.Import)) -> List(String) {
+  imports
+  |> list.group(fn(i) { i.module })
+  |> dict.to_list()
+  |> list.fold([], fn(acc, i) {
+    let #(module, imports) = i
+
+    acc
+    |> list.prepend(conf.Import(
+      module: module,
+      unqualified: list.flat_map(imports, fn(v) { v.unqualified }),
+    ))
+  })
+  |> list.map(fn(i) {
+    let conf.Import(module, _) = i
+
+    let tree =
+      string_tree.new()
+      |> string_tree.append(constants.importline)
+      |> string_tree.append(" ")
+      |> string_tree.append(module)
+
+    case i {
+      conf.Import(_, []) -> string_tree.to_string(tree)
+      conf.Import(_, unqualified) ->
+        tree
+        |> string_tree.append(".{")
+        |> string_tree.append(string.join(list.unique(unqualified), ", "))
+        |> string_tree.append("}")
+        |> string_tree.to_string()
+    }
+  })
 }

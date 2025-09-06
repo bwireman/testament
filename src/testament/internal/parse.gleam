@@ -4,8 +4,8 @@ import gleam/regexp
 import gleam/string
 import glexer
 import glexer/token
-
-const prefix = ":"
+import testament/internal/constants
+import testament/internal/stream
 
 pub type Import =
   String
@@ -19,51 +19,57 @@ pub type ImportsAndCode =
 pub fn parse_markdown_snippets(content: String) -> ImportsAndCode {
   let assert Ok(rg) =
     regexp.compile(
-      "^````?gleam(?:\\s*(\\w+))?([\\s\\S]*?)^````?$",
+      "^```gleam(?:\\s*(\\w+))?([\\s\\S]*?)^```$",
       regexp.Options(False, True),
     )
     as { "failed to compile markdown regex" }
 
   rg
   |> regexp.scan(content)
-  |> list.map(fn(match) {
+  |> stream.new()
+  |> stream.map(fn(match) {
     match.content
-    |> string.replace("````gleam", "")
     |> string.replace("```gleam", "")
-    |> string.replace("````", "")
     |> string.replace("```", "")
     |> string.trim()
     |> glexer.new()
     |> glexer.discard_comments()
     |> glexer.lex()
     |> glexer.to_source()
-    |> string.split("\n")
+    |> string.split(constants.newline)
     |> list.fold(#([], []), split_imports_and_code)
-    |> pair.map_second(string.join(_, "\n"))
+    |> pair.map_second(string.join(_, constants.newline))
   })
+  |> stream.to_list()
   |> prep_imports()
 }
 
 pub fn get_doc_tests_imports_and_code(code: String) -> ImportsAndCode {
-  let prefix_len = string.length(prefix)
+  let prefix_len = string.length(constants.prefix)
 
   code
   |> glexer.new()
   |> glexer.discard_whitespace()
   |> glexer.lex()
-  |> list.map(pair.first)
-  |> list.filter(is_doc)
+  |> stream.new()
+  |> stream.map(pair.first)
+  |> stream.filter(is_doc)
+  |> stream.to_list()
   |> collect_test_lines()
-  |> list.map(fn(tokens) {
+  |> stream.new()
+  |> stream.map(fn(tokens) {
     tokens
-    |> list.filter(is_doctest_line)
-    |> list.map(token.to_source)
-    |> list.map(string.crop(_, prefix))
-    |> list.map(string.drop_start(_, prefix_len))
-    |> list.map(string.trim)
+    |> stream.new()
+    |> stream.filter(is_doctest_line)
+    |> stream.map(token.to_source)
+    |> stream.map(string.crop(_, constants.prefix))
+    |> stream.map(string.drop_start(_, prefix_len))
+    |> stream.map(string.trim)
+    |> stream.to_list()
     |> list.fold(#([], []), split_imports_and_code)
-    |> pair.map_second(string.join(_, "\n"))
+    |> pair.map_second(string.join(_, constants.newline))
   })
+  |> stream.to_list()
   |> prep_imports()
 }
 
@@ -104,7 +110,7 @@ pub fn split_imports_and_code(
   code: ImportsAndCode,
   line: String,
 ) -> ImportsAndCode {
-  case string.starts_with(line, "import") {
+  case string.starts_with(line, constants.importline) {
     True -> pair.map_first(code, list.prepend(_, line))
     False -> pair.map_second(code, list.append(_, [line]))
   }

@@ -10,55 +10,8 @@ import platform
 import shellout
 import simplifile
 import testament/conf
+import testament/internal/constants
 import testament/internal/util
-
-const help = "📖 Testament
-Doc tests for gleam! ✨
-
-- `clean`: delete doc test files
-- `clean all`: delete all doc test files (useful after code reorgs) 'test/**/*_doc_test.gleam' 
-- `help`: prints this help message
-
------------------------
-Usage:
-
-Write some beautiful gleam code with Doc Comments
-```gleam
-////Example Module
-////```gleam
-////: assert 1 + 1 == 2
-////```
-
-///adds two Ints
-///```gleam
-///: assert example.add(1, 2) == 3
-///: assert example.add(1, -1) == 0
-/// ```
-pub fn add(a: Int, b: Int) -> Int {
-  a + b
-}
-```
-
-Add testament to your test's main function
-```gleam
-import gleeunit
-import testament
-
-pub fn main() -> Nil {
-  testament.test_main(gleeunit.main)
-}
-```
-
-Enjoy
-```bash
-gleam test
-  Compiling example
-   Compiled in 0.44s
-    Running example_test.main
-.
-1 tests, no failures
-```
-"
 
 pub fn main() -> Nil {
   case argv.load().arguments {
@@ -75,7 +28,7 @@ pub fn main() -> Nil {
       Nil
     }
 
-    ["-h"] | ["h"] | ["--help"] | ["help"] -> io.println(help)
+    ["-h"] | ["h"] | ["--help"] | ["help"] -> io.println(constants.help)
 
     _ -> {
       io.print_error("Unknown command")
@@ -83,10 +36,6 @@ pub fn main() -> Nil {
     }
   }
 }
-
-const docs_env_var = "TESTAMENT_WITH_DOCS"
-
-const js_args = ["javascript", "--runtime"]
 
 ///Add testament to your test's main function and you're good to go!
 ///You can use gleeunit or any other testing framework
@@ -117,7 +66,7 @@ pub fn test_main(run_tests: fn() -> Nil) -> Nil {
 pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil {
   let cfg = util.combine_conf_values(opts)
 
-  case envoy.get(docs_env_var) {
+  case envoy.get(constants.docs_env_var) {
     Ok(_) -> run_tests()
 
     Error(_) -> {
@@ -130,6 +79,7 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
           string.ends_with(f, ".gleam") && !list.contains(cfg.ignore_files, f)
         })
 
+      // files
       let assert Ok(Nil) =
         list.try_each(files, fn(file) {
           util.verbose_log(cfg.verbose, "creating doc tests for: " <> file)
@@ -137,11 +87,14 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
           let imports =
             dict.get(cfg.extra_imports, file)
             |> result.unwrap([])
+            |> list.prepend(conf.Import(util.import_from_file_name(file), []))
+            |> util.combine_unqualified()
 
           util.create_tests_for_file(file, imports)
         })
         as "failed to read source files"
 
+      // markdown
       let assert Ok(Nil) =
         list.try_each(cfg.markdown_files, fn(file) {
           util.verbose_log(cfg.verbose, "creating doc tests for: " <> file)
@@ -149,6 +102,7 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
           let imports =
             dict.get(cfg.extra_imports, file)
             |> result.unwrap([])
+            |> util.combine_unqualified()
 
           util.create_tests_for_markdown_file(file, imports)
         })
@@ -158,9 +112,9 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
 
       let args = case platform.runtime() {
         platform.Erlang -> ["erlang"]
-        platform.Bun -> list.append(js_args, ["bun"])
-        platform.Deno -> list.append(js_args, ["deno"])
-        platform.Node -> list.append(js_args, ["node"])
+        platform.Bun -> list.append(constants.js_args, ["bun"])
+        platform.Deno -> list.append(constants.js_args, ["deno"])
+        platform.Node -> list.append(constants.js_args, ["node"])
         _ -> panic as "testament: invalid runtime or target"
       }
 
@@ -175,7 +129,7 @@ pub fn test_main_with_opts(run_tests: fn() -> Nil, opts: List(conf.Conf)) -> Nil
         shellout.command("gleam", args, ".", [
           shellout.LetBeStderr,
           shellout.LetBeStdout,
-          shellout.SetEnvironment([#(docs_env_var, "1")]),
+          shellout.SetEnvironment([#(constants.docs_env_var, "1")]),
         ])
 
       case cfg.preserve_files {

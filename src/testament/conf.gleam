@@ -18,6 +18,11 @@
 //// }
 //// ```
 
+/// Imports to be injected into generated test files
+pub type Import {
+  Import(module: String, unqualified: List(String))
+}
+
 /// Options to change how testament works
 pub type Conf {
   /// filepaths (relative to the `src` directory) whose docs should be ignored
@@ -27,7 +32,7 @@ pub type Conf {
   /// don't delete generated test files after the run
   PreserveFiles
   /// other modules to be imported for use in the generated test files
-  ExtraImports(filepath: String, modules: List(String))
+  ExtraImports(filepath: String, imports: List(Import))
   /// create doc tests from markdown file
   Markdown(filepath: List(String))
 }
