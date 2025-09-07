@@ -11,7 +11,7 @@
 ////   // ignore any doc tests in `src/ignored.gleam`
 ////   conf.IgnoreFiles(["src/ignored.gleam"]),
 ////   // add import `gleam/string` into tests for `src/string_util.gleam`
-////   conf.ExtraImports("src/string_util.gleam", ["gleam/string"]),
+////   conf.ExtraImports("src/string_util.gleam", [conf.Import("gleam/string", ["join"])]),
 ////   // generate doc tests for gleam snippets in `docs/docs.md`
 ////   conf.Markdown(["docs/docs.md"]),
 ////  ])
