@@ -74,7 +74,7 @@ pub fn get_doc_tests_imports_and_code(code: String) -> ImportsAndCode {
 }
 
 fn collect_test_lines(tokens: List(token.Token)) -> List(List(token.Token)) {
-  let state = list.fold(tokens, DocState(False, [], []), fold_doc_state)
+  let state = list.fold(tokens, DocState(False, [], [], 0), fold_doc_state)
 
   case state.lines {
     [] -> state.test_bodies
@@ -103,6 +103,7 @@ pub type DocState {
     in: Bool,
     lines: List(token.Token),
     test_bodies: List(List(token.Token)),
+    implicit_asserts: Int,
   )
 }
 
@@ -116,21 +117,81 @@ pub fn split_imports_and_code(
   }
 }
 
+const letters = [
+  "a",
+  "b",
+  "c",
+  "d",
+  "e",
+  "f",
+  "g",
+  "h",
+  "i",
+  "j",
+  "l",
+  "m",
+  "n",
+  "o",
+  "p",
+  "q",
+  "r",
+  "s",
+  "t",
+  "u",
+  "v",
+  "w",
+  "x",
+  "y",
+  "z",
+]
+
+fn prep_implicit_assert(
+  state: DocState,
+  lines: List(token.Token),
+  expected_val: CodeBlock,
+) {
+  let assert [v] = list.sample(letters, 1) as "failed to create implicit_assert"
+  let name = string.repeat(v, state.implicit_asserts + 1)
+
+  let assert #([token.CommentDoc(":" <> prev)], rest) = list.split(lines, 1)
+    as "improper use of ::"
+
+  let prev = token.CommentDoc(": let " <> name <> " =" <> prev)
+
+  let line = token.CommentDoc(": assert " <> name <> " == " <> expected_val)
+
+  DocState(
+    ..state,
+    in: True,
+    lines: [line, prev, ..rest],
+    implicit_asserts: state.implicit_asserts + 1,
+  )
+}
+
 pub fn fold_doc_state(state: DocState, line: token.Token) -> DocState {
   case state, line {
-    DocState(False, lines, _), token.CommentDoc(":" <> _)
-    | DocState(False, lines, _), token.CommentModule(":" <> _)
+    DocState(False, lines, _, _), token.CommentDoc("::" <> expected_val)
+    | DocState(False, lines, _, _), token.CommentModule("::" <> expected_val)
+    -> prep_implicit_assert(state, lines, expected_val)
+
+    DocState(False, lines, _, _), token.CommentDoc(":" <> _)
+    | DocState(False, lines, _, _), token.CommentModule(":" <> _)
     -> DocState(..state, in: True, lines: [line, ..lines])
 
-    DocState(True, lines, _), token.CommentDoc(":" <> _)
-    | DocState(True, lines, _), token.CommentModule(":" <> _)
+    DocState(True, lines, _, _), token.CommentDoc("::" <> expected_val)
+    | DocState(True, lines, _, _), token.CommentModule("::" <> expected_val)
+    -> prep_implicit_assert(state, lines, expected_val)
+
+    DocState(True, lines, _, _), token.CommentDoc(":" <> _)
+    | DocState(True, lines, _, _), token.CommentModule(":" <> _)
     -> DocState(..state, lines: [line, ..lines])
 
-    DocState(True, lines, bodies), _ ->
+    DocState(True, lines, bodies, implicit_asserts), _ ->
       DocState(
         in: False,
         lines: [],
         test_bodies: list.prepend(bodies, list.reverse(lines)),
+        implicit_asserts: implicit_asserts,
       )
 
     _, _ -> state

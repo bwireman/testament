@@ -58,43 +58,48 @@ pub fn is_doctest_line_test() {
 }
 
 pub fn fold_doc_state_test() {
-  assert parse.DocState(False, [], [])
+  assert parse.DocState(False, [], [], 0)
     |> parse.fold_doc_state(token.String(": "))
-    == parse.DocState(False, [], [])
+    == parse.DocState(False, [], [], 0)
 
-  assert parse.DocState(False, [], [])
+  assert parse.DocState(False, [], [], 0)
     |> parse.fold_doc_state(token.CommentDoc(": "))
-    == parse.DocState(True, [token.CommentDoc(": ")], [])
+    == parse.DocState(True, [token.CommentDoc(": ")], [], 0)
 
-  assert parse.DocState(False, [], [])
+  assert parse.DocState(False, [], [], 0)
     |> parse.fold_doc_state(token.CommentModule(": "))
-    == parse.DocState(True, [token.CommentModule(": ")], [])
+    == parse.DocState(True, [token.CommentModule(": ")], [], 0)
 
-  assert parse.DocState(True, [], [])
+  assert parse.DocState(True, [], [], 0)
     |> parse.fold_doc_state(token.CommentDoc(": "))
-    == parse.DocState(True, [token.CommentDoc(": ")], [])
+    == parse.DocState(True, [token.CommentDoc(": ")], [], 0)
 
-  assert parse.DocState(True, [], [])
+  assert parse.DocState(True, [], [], 0)
     |> parse.fold_doc_state(token.CommentModule(": "))
-    == parse.DocState(True, [token.CommentModule(": ")], [])
+    == parse.DocState(True, [token.CommentModule(": ")], [], 0)
 
-  assert parse.DocState(True, [token.CommentModule(": let x = 2 + 2")], [])
+  assert parse.DocState(True, [token.CommentModule(": let x = 2 + 2")], [], 0)
     |> parse.fold_doc_state(token.CommentModule(": assert x == 4"))
     |> parse.fold_doc_state(token.CommentModule("pub fn x"))
-    == parse.DocState(False, [], [
+    == parse.DocState(
+      False,
+      [],
       [
-        token.CommentModule(": let x = 2 + 2"),
-        token.CommentModule(": assert x == 4"),
+        [
+          token.CommentModule(": let x = 2 + 2"),
+          token.CommentModule(": assert x == 4"),
+        ],
       ],
-    ])
+      0,
+    )
 
-  assert parse.DocState(True, [], [])
+  assert parse.DocState(True, [], [], 0)
     |> parse.fold_doc_state(token.CommentDoc(" "))
-    == parse.DocState(False, [], [[]])
+    == parse.DocState(False, [], [[]], 0)
 
-  assert parse.DocState(True, [], [])
+  assert parse.DocState(True, [], [], 0)
     |> parse.fold_doc_state(token.CommentModule(" "))
-    == parse.DocState(False, [], [[]])
+    == parse.DocState(False, [], [[]], 0)
 }
 
 pub fn split_imports_and_code_test() {

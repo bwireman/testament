@@ -24,9 +24,7 @@ pub fn get_test_file_name(file: String) -> String {
 pub fn clean_doc_tests() -> Result(Nil, simplifile.FileError) {
   use files <- result.try(simplifile.get_files("src"))
   files
-  |> stream.new()
-  |> stream.map(get_test_file_name)
-  |> stream.to_list()
+  |> list.map(get_test_file_name)
   |> simplifile.delete_all()
 }
 
@@ -156,16 +154,16 @@ pub fn combine_unqualified(imports: List(conf.Import)) -> List(String) {
   imports
   |> list.group(fn(i) { i.module })
   |> dict.to_list()
-  |> list.fold([], fn(acc, i) {
+  |> stream.new()
+  |> stream.map(fn(i) {
     let #(module, imports) = i
 
-    acc
-    |> list.prepend(conf.Import(
+    conf.Import(
       module: module,
       unqualified: list.flat_map(imports, fn(v) { v.unqualified }),
-    ))
+    )
   })
-  |> list.map(fn(i) {
+  |> stream.map(fn(i) {
     let conf.Import(module, _) = i
 
     let tree =
@@ -184,4 +182,5 @@ pub fn combine_unqualified(imports: List(conf.Import)) -> List(String) {
         |> string_tree.to_string()
     }
   })
+  |> stream.to_list()
 }

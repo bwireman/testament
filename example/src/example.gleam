@@ -15,6 +15,13 @@ import gleam/option
 ///:
 ///: assert y == {x * 2} + 1
 /// ```
+/// with implicit assert
+/// ```
+///: example.add(1, 2)
+///:: 3
+///: example.add(3, 2)
+///:: 5
+/// ```
 pub fn add(a: Int, b: Int) -> Int {
   a + b
 }
@@ -34,6 +41,8 @@ pub type SuperInt {
 ///: let x = example.super_add(SuperInt(1), SuperInt(2))
 ///: assert x == Some(SuperInt(3))
 ///: assert example.super_add(SuperInt(-10), SuperInt(1)) == None
+///: example.super_add(SuperInt(1), SuperInt(1))
+///:: Some(SuperInt(2))
 pub fn super_add(a: SuperInt, b: SuperInt) -> option.Option(SuperInt) {
   let sum = a.v + b.v
   case sum > 0 {
