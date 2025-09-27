@@ -15,6 +15,11 @@ import gleam/option
 ///:
 ///: assert y == {x * 2} + 1
 /// ```
+/// with implicit assert
+/// ```
+///: example.add(1, 2)
+///:: 3
+/// ```
 pub fn add(a: Int, b: Int) -> Int {
   a + b
 }

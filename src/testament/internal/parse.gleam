@@ -116,11 +116,34 @@ pub fn split_imports_and_code(
   }
 }
 
+fn prep_implicit_assert(
+  state: DocState,
+  lines: List(token.Token),
+  expected_val: CodeBlock,
+) {
+  let assert #([token.CommentDoc(":" <> prev)], rest) = list.split(lines, 1)
+    as "improper use of ::"
+
+  let prev = token.CommentDoc(": let fixme =" <> prev)
+
+  let line = token.CommentDoc(": assert fixme == " <> expected_val)
+
+  DocState(..state, in: True, lines: [line, prev, ..rest])
+}
+
 pub fn fold_doc_state(state: DocState, line: token.Token) -> DocState {
   case state, line {
+    DocState(False, lines, _), token.CommentDoc("::" <> expected_val)
+    | DocState(False, lines, _), token.CommentModule("::" <> expected_val)
+    -> prep_implicit_assert(state, lines, expected_val)
+
     DocState(False, lines, _), token.CommentDoc(":" <> _)
     | DocState(False, lines, _), token.CommentModule(":" <> _)
     -> DocState(..state, in: True, lines: [line, ..lines])
+
+    DocState(True, lines, _), token.CommentDoc("::" <> expected_val)
+    | DocState(True, lines, _), token.CommentModule("::" <> expected_val)
+    -> prep_implicit_assert(state, lines, expected_val)
 
     DocState(True, lines, _), token.CommentDoc(":" <> _)
     | DocState(True, lines, _), token.CommentModule(":" <> _)
